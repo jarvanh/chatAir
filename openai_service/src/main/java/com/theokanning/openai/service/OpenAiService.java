@@ -328,10 +328,10 @@ public class OpenAiService {
         createChatCompletion(api.createChatCompletion(request), baseMessage, callBack);
     }
 
-    public void createChatGCompletion(ChatGCompletionRequest request, String model,
+    public void createChatGCompletion(ChatGCompletionRequest request, String model, String version,
                                       final BaseMessage baseMessage, final ResultGCallBack callBack) {
 
-        createChatGCompletion(api.createGChatCompletion(model, request), baseMessage, callBack);
+        createChatGCompletion(api.createGChatCompletion(model, version, request), baseMessage, callBack);
     }
 
     public Flowable<ChatCompletionChunk> streamChatCompletion(ChatCompletionRequest request) {
@@ -875,14 +875,15 @@ public class OpenAiService {
 
 
     private StreamGCallBack streamGCallBack;
-    public void streamChatGCompletion(ChatGCompletionRequest request, String model,  StreamGCallBack callBack) {
+    public void streamChatGCompletion(ChatGCompletionRequest request, String model, String version,
+                                      StreamGCallBack callBack) {
 
         isStreamFirstLoading = true;
         loadingG(callBack);
         //因为on在取消stream请求的问题（具体看ResponseBodyCallback），无法执行onCompletion，所以需要折中调用onCompletion
         streamGCallBack = callBack;
 
-        Call<ResponseBody> apiCall = api.createGChatCompletionStream(model, request);
+        Call<ResponseBody> apiCall = api.createGChatCompletionStream(model, version, request);
         Disposable disposable = streamG(apiCall, ChatGCompletionResponse.class)
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io())

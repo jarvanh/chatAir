@@ -501,11 +501,13 @@ public class UserConfig extends BaseController {
         aiModelList.put(2, new AiModelBean("GPT-3.5-0613", "gpt-3.5-turbo-0613", false));
         aiModelList.put(3, new AiModelBean("GPT-3.5-16k", "gpt-3.5-turbo-16k", true));
         aiModelList.put(4, new AiModelBean("GPT-3.5-16k-0613", "gpt-3.5-turbo-16k-0613", false));
+        aiModelList.put(12, new AiModelBean("GPT-3.5-0125", "gpt-3.5-turbo-0125", true));
         aiModelList.put(5, new AiModelBean("GPT-4", "gpt-4", true));
         aiModelList.put(6, new AiModelBean("GPT-4-0613", "gpt-4-0613", false));
         aiModelList.put(7, new AiModelBean("GPT-4-32k", "gpt-4-32k", true));
         aiModelList.put(8, new AiModelBean("GPT-4-32k-0613", "gpt-4-32k-0613", false));
-        aiModelList.put(9, new AiModelBean("GPT-4-1106-preview", "gpt-4-1106-preview", true));
+        aiModelList.put(9, new AiModelBean("GPT-4-1106-preview", "gpt-4-1106-preview", false));
+        aiModelList.put(11, new AiModelBean("GPT-4-0125-preview", "gpt-4-0125-preview", true));
         aiModelList.put(10, new AiModelBean("GPT-4-vision-preview", "gpt-4-vision-preview",
                 "GPT-4-vision-preview (Picture model)", true));
 //        initOpenrouter();
@@ -541,10 +543,18 @@ public class UserConfig extends BaseController {
     // https://ai.google.dev/models/gemini
     public void initGoogle() {
         if (aiModelList == null) return;
-        aiModelList.put(801, new AiModelBean("Gemini Pro", "gemini-pro", true));
+        aiModelList.put(801, new AiModelBean("Gemini Pro 1.0", "gemini-pro", true));
+        aiModelList.put(803, new AiModelBean("Gemini Pro 1.5", "gemini-1.5-pro-latest", true));
         aiModelList.put(802, new AiModelBean("Gemini Pro Vision", "gemini-pro-vision",
                 "Gemini Pro Vision (Picture model)", true));
 
+    }
+
+    public static String getGoogleVersion(String model) {
+        if (!TextUtils.isEmpty(model) && model.equals("gemini-1.5-pro-latest")) {
+            return "v1beta";
+        }
+        return "v1";
     }
 
     public String getAiModelName(int aiModel) {
@@ -688,6 +698,7 @@ public class UserConfig extends BaseController {
 
         if (aiModel == 801) return true;
         if (aiModel == 802) return true;
+        if (aiModel == 803) return true;
 
         return false;
     }

@@ -6685,6 +6685,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 .build();
 
         completionRequest.setGenerationConfig(chatGGenerationConfig);
+        String version = UserConfig.getGoogleVersion(aiModelReal);
 
         // 配置聊天
         List<ChatGMessage> contents = getChatChatGMessageList(prompt, originalPath, isGeminiProVision, msgObj);
@@ -6702,7 +6703,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
             String geminiId = "Gemini_" + SystemClock.elapsedRealtime();
 
-            openAiService.streamChatGCompletion(completionRequest, aiModelReal,
+            openAiService.streamChatGCompletion(completionRequest, aiModelReal, version,
                     new OpenAiService.StreamGCallBack() {
                 @Override
                 public void onSuccess(ChatGCompletionResponse result) {
@@ -6903,7 +6904,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 }
             });
         } else {
-            openAiService.createChatGCompletion(completionRequest, aiModelReal, baseMessage,
+            openAiService.createChatGCompletion(completionRequest, aiModelReal, version, baseMessage,
                     new OpenAiService.ResultGCallBack() {
                         @Override
                         public void onSuccess(ChatGCompletionResponse result) {
