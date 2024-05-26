@@ -510,13 +510,18 @@ public class UserConfig extends BaseController {
         aiModelList.put(2, new AiModelBean("GPT-3.5-0613", "gpt-3.5-turbo-0613", false));
         aiModelList.put(3, new AiModelBean("GPT-3.5-16k", "gpt-3.5-turbo-16k", true));
         aiModelList.put(4, new AiModelBean("GPT-3.5-16k-0613", "gpt-3.5-turbo-16k-0613", false));
+        aiModelList.put(12, new AiModelBean("GPT-3.5-0125", "gpt-3.5-turbo-0125", true));
         aiModelList.put(5, new AiModelBean("GPT-4", "gpt-4", true));
         aiModelList.put(6, new AiModelBean("GPT-4-0613", "gpt-4-0613", false));
         aiModelList.put(7, new AiModelBean("GPT-4-32k", "gpt-4-32k", true));
         aiModelList.put(8, new AiModelBean("GPT-4-32k-0613", "gpt-4-32k-0613", false));
-        aiModelList.put(9, new AiModelBean("GPT-4-1106-preview", "gpt-4-1106-preview", true));
+        aiModelList.put(9, new AiModelBean("GPT-4-1106-preview", "gpt-4-1106-preview", false));
+        aiModelList.put(11, new AiModelBean("GPT-4-0125-preview", "gpt-4-0125-preview", true));
+        aiModelList.put(13, new AiModelBean("GPT-4o", "gpt-4o", true));
         aiModelList.put(10, new AiModelBean("GPT-4-vision-preview", "gpt-4-vision-preview",
                 "GPT-4-vision-preview (Picture model)", true));
+        aiModelList.put(14, new AiModelBean("GPT-4o-Picture", "gpt-4o",
+                "GPT-4o (Picture model)", true));
 //        initOpenrouter();
         initGoogle();
         initClaude();
@@ -551,9 +556,15 @@ public class UserConfig extends BaseController {
     // https://ai.google.dev/models/gemini
     public void initGoogle() {
         if (aiModelList == null) return;
-        aiModelList.put(801, new AiModelBean("Gemini Pro", "gemini-pro", true));
+        aiModelList.put(801, new AiModelBean("Gemini Pro 1.0", "gemini-pro", true));
+        aiModelList.put(803, new AiModelBean("Gemini Pro 1.5", "gemini-1.5-pro-latest", true));
+        aiModelList.put(804, new AiModelBean("Gemini Pro 1.5 Flash", "gemini-1.5-flash-latest", true));
         aiModelList.put(802, new AiModelBean("Gemini Pro Vision", "gemini-pro-vision",
                 "Gemini Pro Vision (Picture model)", true));
+        aiModelList.put(805, new AiModelBean("Gemini Pro 1.5 Picture", "gemini-1.5-pro-latest",
+                "Gemini Pro 1.5 (Picture model)", true));
+        aiModelList.put(806, new AiModelBean("Gemini 1.5 Flash Picture", "gemini-1.5-flash-latest",
+                "Gemini 1.5 Flash (Picture model)", true));
 
     }
 
@@ -562,8 +573,26 @@ public class UserConfig extends BaseController {
         aiModelList.put(901, new AiModelBean("Claude 3 haiku", "claude-3-haiku-20240307",
                 true));
         aiModelList.put(902, new AiModelBean("Claude 3 opus", "claude-3-opus-20240229",
-                 true));
+                true));
 
+    }
+
+    public static boolean isOpenAiMulti(String model) {
+        if (!TextUtils.isEmpty(model)
+                && (model.equals("gpt-4-vision-preview")
+        )) {
+            return true;
+        }
+        return false;
+    }
+    public static String getGoogleVersion(String model) {
+        if (!TextUtils.isEmpty(model)
+                && (model.equals("gemini-1.5-pro-latest")
+                || model.equals("gemini-1.5-flash-latest")
+        )) {
+            return "v1beta";
+        }
+        return "v1";
     }
 
     public String getAiModelName(int aiModel) {
@@ -724,6 +753,10 @@ public class UserConfig extends BaseController {
 
         if (aiModel == 801) return true;
         if (aiModel == 802) return true;
+        if (aiModel == 803) return true;
+        if (aiModel == 804) return true;
+        if (aiModel == 805) return true;
+        if (aiModel == 806) return true;
 
         return false;
     }
@@ -744,6 +777,16 @@ public class UserConfig extends BaseController {
     public boolean isJudgeByModelGeminiProVision(int aiModel) {
 
         if (aiModel == 802) return true;
+        if (aiModel == 805) return true;
+        if (aiModel == 806) return true;
+
+        return false;
+    }
+
+    public boolean isJudgeByModelOpenAIVision(int aiModel) {
+
+        if (aiModel == 10) return true;
+        if (aiModel == 14) return true;
 
         return false;
     }
@@ -765,7 +808,10 @@ public class UserConfig extends BaseController {
     public boolean isJudgeByModelVision(int aiModel) {
 
         if (aiModel == 802) return true;
+        if (aiModel == 805) return true;
+        if (aiModel == 806) return true;
         if (aiModel == 10) return true;
+        if (aiModel == 14) return true;
 
         return false;
     }

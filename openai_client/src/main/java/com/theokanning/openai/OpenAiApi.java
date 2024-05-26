@@ -134,16 +134,18 @@ public interface OpenAiApi {
 
     // -----Gemini-----
 //    @POST("v1beta/models/gemini-pro:generateContent?key={api_key}")
-    @POST("v1/models/{model}:generateContent")
+    @POST("{version}/models/{model}:generateContent")
     Single<ChatGCompletionResponse> createGChatCompletion(
             @Path("model") String model,
+            @Path("version") String version,
 //            @Query("key") String api_key,
             @Body ChatGCompletionRequest request);
 
     @Streaming
-    @POST("v1/models/{model}:streamGenerateContent?alt=sse")
+    @POST("{version}/models/{model}:streamGenerateContent?alt=sse")
     Call<ResponseBody> createGChatCompletionStream(
             @Path("model") String model,
+            @Path("version") String version,
             @Body ChatGCompletionRequest request);
 
     @POST("v1/messages")

@@ -5787,6 +5787,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             boolean isGeminiProVision;
 
             boolean isClaude;
+            boolean isOpenAIVision;
 
             if ((user.flags2 & MessagesController.UPDATE_MASK_CHAT_AIR_PROMPT) != 0
                     && !TextUtils.isEmpty(user.prompt)) {
@@ -5810,6 +5811,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             isGeminiProVision = UserConfig.getInstance(currentAccount).isJudgeByModelGeminiProVision(aiModel);
 
             isClaude = UserConfig.getInstance(currentAccount).isJudgeByModelClaude(aiModel);
+            isOpenAIVision = UserConfig.getInstance(currentAccount).isJudgeByModelOpenAIVision(aiModel);
 
             if ((user.flags2 & MessagesController.UPDATE_MASK_CHAT_AIR_AI_TEMPERATURE) != 0
                     && user.flags2 != -1) {
@@ -5841,7 +5843,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 ChatCompletionRequest chatCompletionRequest;
 
                 // 发送请求格式切换，多模态请求，以及旧模态请求（只能发送文本）
-                if (isMultiCompletionRequest(aiModelReal)) {
+                if (isMultiCompletionRequest(aiModelReal, isOpenAIVision)) {
                     List<ChatMultiMessage> chatMessageList = getChatMultiCompletionRequest(prompt, msgObj);
 
                     chatCompletionRequest = ChatCompletionRequest.builder()
@@ -6552,7 +6554,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     }
 
     // 控制多模态与旧模态切换
-    private boolean isMultiCompletionRequest(String aiModelReal) {
+    private boolean isMultiCompletionRequest(String aiModelReal, boolean isOpenAIVision) {
 
         boolean isMulti = false;
 
@@ -6564,9 +6566,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         // 截止2023.11.11 openAi官方的聊天模型都适配多模态
         // 对于只是转发openAi的网站，没有问题。但比如OpenRouter，还是使用旧的模型，没有针对openAi所有模型进行更新
         boolean isModelReal = false;
-        if (!TextUtils.isEmpty(aiModelReal)) isModelReal = aiModelReal.contains("gpt-4-vision");
+        if (!TextUtils.isEmpty(aiModelReal)) isModelReal = UserConfig.isOpenAiMulti(aiModelReal);
 
-        isMulti = !isOpenRouter && isModelReal;
+        isMulti = !isOpenRouter && (isModelReal || isOpenAIVision);
 
         return isMulti;
 
@@ -6757,6 +6759,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 .build();
 
         completionRequest.setGenerationConfig(chatGGenerationConfig);
+        String version = UserConfig.getGoogleVersion(aiModelReal);
 
         // 配置聊天
         List<ChatGMessage> contents = getChatChatGMessageList(prompt, originalPath, isGeminiProVision, msgObj);
@@ -6774,7 +6777,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
             String geminiId = "Gemini_" + SystemClock.elapsedRealtime();
 
-            openAiService.streamChatGCompletion(completionRequest, aiModelReal,
+            openAiService.streamChatGCompletion(completionRequest, aiModelReal, version,
                     new OpenAiService.StreamGCallBack() {
                 @Override
                 public void onSuccess(ChatGCompletionResponse result) {
@@ -6975,7 +6978,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 }
             });
         } else {
-            openAiService.createChatGCompletion(completionRequest, aiModelReal, baseMessage,
+            openAiService.createChatGCompletion(completionRequest, aiModelReal, version, baseMessage,
                     new OpenAiService.ResultGCallBack() {
                         @Override
                         public void onSuccess(ChatGCompletionResponse result) {

@@ -275,6 +275,7 @@ public class ChangeGoogleApiServerActivity extends BaseFragment {
         completionRequest.setContents(chatGMessageList);
 
         openAiService.createChatGCompletion(completionRequest, "gemini-pro",
+                UserConfig.getGoogleVersion("gemini-pro"),
                 new BaseMessage(), new OpenAiService.ResultGCallBack() {
                     @Override
                     public void onSuccess(ChatGCompletionResponse result) {
