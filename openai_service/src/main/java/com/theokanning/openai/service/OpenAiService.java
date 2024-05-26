@@ -21,6 +21,12 @@ import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatGCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatGCompletionResponse;
+import com.theokanning.openai.completion.chat.anthropic.AnthropicError;
+import com.theokanning.openai.completion.chat.anthropic.AnthropicHttpException;
+import com.theokanning.openai.completion.chat.anthropic.ChatACompletionChoice;
+import com.theokanning.openai.completion.chat.anthropic.ChatACompletionRequest;
+import com.theokanning.openai.completion.chat.anthropic.ChatACompletionResponse;
+import com.theokanning.openai.completion.chat.anthropic.ChatAContentType;
 import com.theokanning.openai.edit.EditRequest;
 import com.theokanning.openai.edit.EditResult;
 import com.theokanning.openai.embedding.EmbeddingRequest;
@@ -88,8 +94,8 @@ public class OpenAiService {
 
     public final int listModels = 1;
 
-    private boolean isGoogleUrl = false;
-    private boolean isGoogleToken = false;
+    private LLMType llmTypeUrl = LLMType.unKnow;
+    private LLMType llmTypeToken = LLMType.unKnow;
 
     /**
      * Creates a new OpenAiService that wraps OpenAiApi
@@ -97,7 +103,7 @@ public class OpenAiService {
      * @param token OpenAi token string "sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
      */
     public OpenAiService(final String token) {
-        this(token, DEFAULT_TIMEOUT, BASE_URL, false);
+        this(token, DEFAULT_TIMEOUT, BASE_URL, LLMType.openAi);
     }
 
     /**
@@ -106,170 +112,154 @@ public class OpenAiService {
      * @param token  OpenAi token string "sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
      * @param second http read timeout
      */
-    public OpenAiService(final String token, final long second, final String url, boolean isGoogle) {
+    public OpenAiService(final String token, final long second, final String url, LLMType llmType) {
 
         String baseUrl = (TextUtils.isEmpty(url) || HttpUrl.parse(url) == null) ? BASE_URL : url;
 
         ObjectMapper mapper = defaultObjectMapper();
-        this.client = defaultClient(token, second, url, isGoogle);
+        this.client = defaultClient(token, second, url, llmType);
         this.executorService = client.dispatcher().executorService();
         Retrofit retrofit = defaultRetrofit(client, mapper, baseUrl, this.executorService);
 
         this.api = retrofit.create(OpenAiApi.class);
 
-        // 初始化isGoogle
-        isGoogleToken = isGoogle;
-        isGoogleUrl = isGoogle;
+        llmTypeUrl = llmType;
+        llmTypeToken = llmType;
     }
 
+    // 只切换url
     public void switchDefault(String token, String url) {
 
-        if (isGoogleToken) {
-            changeToken(token);
-        }
-        if (isGoogleUrl) {
-            changeServer(url);
-        }
+        checkLLMToken(token, LLMType.openAi);
+        checkLLMServer(url, LLMType.openAi);
     }
 
     public void switchGoogle(String token, String url) {
 
-        if (!isGoogleToken) {
-            changeTokenGoogle(token);
-        }
-        if (!isGoogleUrl) {
-            changeServerGoogle(url);
-        }
+        checkLLMToken(token, LLMType.google);
+        checkLLMServer(url, LLMType.google);
+    }
+    public void switchClaude(String token, String url) {
+
+        checkLLMToken(token, LLMType.anthropic);
+        checkLLMServer(url, LLMType.anthropic);
     }
 
-    public void changeMatchToken(String token, String matchUrl) {
+    public void changeMatchToken(String token, String url) {
 
-        if (!isGoogleUrl) {
-            // Url为默认，不需要改变
-            changeToken(token);
+        checkMatchToken(token, url, LLMType.openAi);
+
+    }
+
+    public void changeMatchServer(String url, String token) {
+
+        checkMatchUrl(token, url, LLMType.openAi);
+    }
+
+
+    public void changeMatchTokenGoogle(String token, String url) {
+
+        checkMatchToken(token, url, LLMType.google);
+    }
+
+    public void changeMatchServerGoogle(String url, String token) {
+
+        checkMatchToken(token, url, LLMType.google);
+    }
+    public void changeMatchTokenClaude(String token, String url) {
+
+        checkMatchToken(token, url, LLMType.anthropic);
+    }
+
+    public void changeMatchServerClaude(String url, String token) {
+
+        checkMatchToken(token, url, LLMType.anthropic);
+    }
+
+    public void checkLLMToken(String token, LLMType llmType) {
+
+        if (llmTypeToken != llmType) {
+            changeLLMToken(token, llmType);
+        }
+
+        changeLLMToken(token, llmType);
+    }
+
+    public void checkLLMServer(String url, LLMType llmType) {
+
+        if (llmTypeUrl != llmType) {
+            changeLLMServer(url, llmType);
+        }
+
+    }
+
+    public void checkMatchToken(String token, String url, LLMType llmType) {
+
+        if (llmTypeUrl == llmType) {
+            // Url为自身，不需要改变
+            checkLLMToken(token, llmType);
         } else {
-            // Url为google，需要Url和token一起改变
-            changeTokenAndServer(token, matchUrl);
+            // Url为其他，需要Url和token一起改变
+            changeLLMTokenAndServer(token,  url, llmType);
         }
+
     }
+    public void checkMatchUrl(String token, String url, LLMType llmType) {
 
-    public void changeMatchServer(String url, String matchToken) {
-
-        if (!isGoogleToken) {
-            // token为默认，不需要改变
-            changeServer(url);
+        if (llmTypeToken == llmType) {
+            // token为自身，不需要改变
+            checkLLMServer(url, llmType);
         } else {
-            // token为google，需要token和Url一起改变
-            changeTokenAndServer(matchToken, url);
+            // token为其他，需要Url和token一起改变
+            changeLLMTokenAndServer(token,  url, llmType);
         }
+
     }
 
-
-    public void changeMatchTokenGoogle(String token, String matchUrl) {
-
-        if (isGoogleUrl) {
-            // Url为Google，不需要改变
-            changeTokenGoogle(token);
-        } else {
-            // Url为默认，需要Url和token一起改变
-            changeTokenAndServerGoogle(token, matchUrl);
-        }
-    }
-
-    public void changeMatchServerGoogle(String url, String matchToken) {
-
-        if (isGoogleToken) {
-            // token为Google，不需要改变
-            changeServerGoogle(url);
-        } else {
-            // token为默认，需要token和Url一起改变
-            changeTokenAndServerGoogle(matchToken, url);
-        }
-    }
-
-
-    public void changeToken(String token) {
+    public void changeLLMToken(String token, LLMType llmType) {
         if (client != null && token != null) {
             for (Interceptor interceptor : client.interceptors()) {
                 if (interceptor instanceof AuthenticationInterceptor) {
-                    isGoogleToken = false;
+                    llmTypeToken = llmType;
                     ((AuthenticationInterceptor) interceptor).setToken(token);
-                    ((AuthenticationInterceptor) interceptor).setGoogle(isGoogle());
+                    ((AuthenticationInterceptor) interceptor).setLlmType(getLLMType(llmType));
                 }
             }
         }
     }
 
-    public void changeServer(String url) {
+    public void changeLLMServer(String url, LLMType llmType) {
         if (client != null && !TextUtils.isEmpty(url)) {
             for (Interceptor interceptor : client.interceptors()) {
                 if (interceptor instanceof AuthenticationInterceptor) {
-                    isGoogleUrl = false;
+                    llmTypeUrl = llmType;
                     ((AuthenticationInterceptor) interceptor).setUrl(url);
-                    ((AuthenticationInterceptor) interceptor).setGoogle(isGoogle());
+                    ((AuthenticationInterceptor) interceptor).setLlmType(getLLMType(llmType));
                 }
             }
         }
     }
 
-    public void changeTokenAndServer(String token, String url) {
+    public void changeLLMTokenAndServer(String token, String url, LLMType llmType) {
         if (client != null && !TextUtils.isEmpty(token) && !TextUtils.isEmpty(url)) {
             for (Interceptor interceptor : client.interceptors()) {
                 if (interceptor instanceof AuthenticationInterceptor) {
-                    isGoogleUrl = false;
+                    llmTypeToken = llmType;
+                    llmTypeUrl = llmType;
                     ((AuthenticationInterceptor) interceptor).setToken(token);
                     ((AuthenticationInterceptor) interceptor).setUrl(url);
-                    ((AuthenticationInterceptor) interceptor).setGoogle(isGoogle());
+                    ((AuthenticationInterceptor) interceptor).setLlmType(getLLMType(llmType));
                 }
             }
         }
     }
 
-    public void changeTokenGoogle(String token) {
-        if (client != null && token != null) {
-            for (Interceptor interceptor : client.interceptors()) {
-                if (interceptor instanceof AuthenticationInterceptor) {
-                    isGoogleToken = true;
-                    ((AuthenticationInterceptor) interceptor).setToken(token);
-                    ((AuthenticationInterceptor) interceptor).setGoogle(isGoogle());
-                }
-            }
-        }
-    }
+    public LLMType getLLMType(LLMType llmType) {
+        if (llmTypeToken == llmType && llmTypeUrl == llmType) return llmType;
 
-    public void changeServerGoogle(String url) {
-        if (client != null && !TextUtils.isEmpty(url)) {
-            for (Interceptor interceptor : client.interceptors()) {
-                if (interceptor instanceof AuthenticationInterceptor) {
-                    isGoogleUrl = true;
-                    ((AuthenticationInterceptor) interceptor).setUrl(url);
-                    ((AuthenticationInterceptor) interceptor).setGoogle(isGoogle());
-                }
-            }
-        }
-    }
-
-    public void changeTokenAndServerGoogle(String token, String url) {
-        if (client != null && !TextUtils.isEmpty(token)  && !TextUtils.isEmpty(url)) {
-            for (Interceptor interceptor : client.interceptors()) {
-                if (interceptor instanceof AuthenticationInterceptor) {
-                    isGoogleUrl = false;
-                    ((AuthenticationInterceptor) interceptor).setToken(token);
-                    ((AuthenticationInterceptor) interceptor).setUrl(url);
-                    ((AuthenticationInterceptor) interceptor).setGoogle(isGoogle());
-                }
-            }
-        }
-    }
-
-    // url与token必须绑定
-    public boolean isGoogle() {
-        if (isGoogleUrl && isGoogleToken) return true;
-        if (!isGoogleUrl && !isGoogleToken) return false;
-
-        // Url与token不匹配，抛出异常
-        System.out.print("URL does not match token isUrl:" + isGoogleUrl  + "isToken:" + isGoogleToken);
-        return false;
+        System.out.print("llmType:" + llmType
+                + "URL does not match token isUrl:" + llmTypeUrl  + "isToken:" + llmTypeToken);
+        return LLMType.unKnow;
     }
 
     /**
@@ -332,6 +322,11 @@ public class OpenAiService {
                                       final BaseMessage baseMessage, final ResultGCallBack callBack) {
 
         createChatGCompletion(api.createGChatCompletion(model, request), baseMessage, callBack);
+    }
+    public void createChatACompletion(ChatACompletionRequest request,
+                                      final ResultACallBack callBack) {
+
+        createChatACompletion(api.createAChatCompletion(request), callBack);
     }
 
     public Flowable<ChatCompletionChunk> streamChatCompletion(ChatCompletionRequest request) {
@@ -536,6 +531,32 @@ public class OpenAiService {
                 });
     }
 
+    public void loadingA(ResultACallBack resultCallBack) {
+        Observable.interval(0, 5, TimeUnit.SECONDS)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<Long>() {
+                    @Override
+                    public void onSubscribe(@NonNull Disposable d) {
+                        compositeDisposable.add(d);
+                    }
+
+                    @Override
+                    public void onNext(@NonNull Long aLong) {
+                        resultCallBack.onLoading(true);
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
+    }
+
     private Disposable streamLoadingDisposable;
 
     public void loading(StreamCallBack streamCallBack) {
@@ -589,6 +610,42 @@ public class OpenAiService {
                     public void onNext(@NonNull Long aLong) {
                         if (isStreamFirstLoading) {
                             if (streamGCallBack != null) streamGCallBack.onLoading(true);
+                        } else {
+                            if (streamLoadingDisposable != null) {
+                                compositeDisposable.remove(streamLoadingDisposable);
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+                        if (streamLoadingDisposable != null) {
+                            compositeDisposable.remove(streamLoadingDisposable);
+                        }
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
+    }
+
+    public void loadingA(StreamACallBack streamCallBack) {
+
+        Observable.interval(0, 5, TimeUnit.SECONDS)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<Long>() {
+                    @Override
+                    public void onSubscribe(@NonNull Disposable d) {
+                        streamLoadingDisposable = d;
+                        compositeDisposable.add(d);
+                    }
+
+                    @Override
+                    public void onNext(@NonNull Long aLong) {
+                        if (isStreamFirstLoading) {
+                            if (streamACallBack != null) streamACallBack.onLoading(true);
                         } else {
                             if (streamLoadingDisposable != null) {
                                 compositeDisposable.remove(streamLoadingDisposable);
@@ -796,6 +853,65 @@ public class OpenAiService {
 
     }
 
+    public <T> void createChatACompletion(Single<T> apiCall, ResultACallBack resultCallBack) {
+
+        compositeDisposable.clear();
+
+        apiCall
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe((new SingleObserver<T>() {
+                    @Override
+                    public void onSubscribe(@NonNull Disposable disposable) {
+
+                        compositeDisposable.add(disposable);
+                        loadingA(resultCallBack);
+                    }
+
+                    @Override
+                    public void onSuccess(@NonNull T t) {
+                        resultCallBack.onSuccess((ChatACompletionResponse) t);
+                        resultCallBack.onLoading(false);
+                        compositeDisposable.clear();
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable throwable) {
+
+
+                        HttpException e;
+                        if (throwable instanceof HttpException) {
+                            e = (HttpException) throwable;
+                        } else {
+                            resultCallBack.onError(null, throwable);
+                            resultCallBack.onLoading(false);
+                            compositeDisposable.clear();
+                            return;
+                        }
+
+                        try {
+                            if (e.response() == null || e.response().errorBody() == null) {
+                                resultCallBack.onError(null, throwable);
+                            } else {
+                                String errorBody = e.response().errorBody().string();
+
+                                AnthropicError error = mapper.readValue(errorBody, AnthropicError.class);
+                                resultCallBack.onError(new AnthropicHttpException(error,throwable),
+                                        throwable);
+                            }
+                        } catch (IOException ex) {
+                            // couldn't parse OpenAI error
+                            resultCallBack.onError(null, throwable);
+                        } finally {
+                            resultCallBack.onLoading(false);
+                            compositeDisposable.clear();
+                        }
+
+                    }
+                }));
+
+    }
+
     private volatile boolean isStreamFirstLoading;
     private StreamCallBack streamCallBack;
 
@@ -947,6 +1063,82 @@ public class OpenAiService {
         requestList.put("streamChatCompletion", apiCall);
     }
 
+    private StreamACallBack streamACallBack;
+
+    public void streamChatACompletion(ChatACompletionRequest request, StreamACallBack callBack) {
+
+        request.setStream(true);
+        isStreamFirstLoading = true;
+        loadingA(callBack);
+        //因为on在取消stream请求的问题（具体看ResponseBodyCallback），无法执行onCompletion，所以需要折中调用onCompletion
+        streamACallBack = callBack;
+
+        Call<ResponseBody> apiCall = api.createAChatCompletionStream(request);
+        Disposable disposable = streamA(apiCall, ChatACompletionChoice.class)
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .forEachWhile(chatCompletionChunk -> {
+
+                            if (isStreamFirstLoading) {
+                                isStreamFirstLoading = false;
+                                if (streamACallBack != null) streamACallBack.onLoading(false);
+                            }
+
+                            if (streamACallBack != null) streamACallBack.onSuccess(chatCompletionChunk);
+
+                            //返回true代表继续回调，false代表执行完成回调
+                    return !ChatAContentType.MESSAGE_STOP.value().equals(chatCompletionChunk.getType())
+//                            return chatCompletionChunk.getContent() == null
+//                                    || chatCompletionChunk.getContent().size() <= 0
+//                                    || chatCompletionChunk.getContent().get(0).getFinishReason() == null
+                                    ;
+                        },
+                        throwable -> {
+
+                            HttpException e;
+                            if (throwable instanceof HttpException) {
+                                e = (HttpException) throwable;
+                            } else {
+                                if (streamACallBack != null) streamACallBack.onError(null, throwable);
+
+                                if (streamACallBack != null) streamACallBack.onLoading(false);
+                                streamACallBack = null;
+                                compositeDisposable.clear();
+
+                                return;
+                            }
+
+                            try {
+                                if (e.response() == null || e.response().errorBody() == null) {
+                                    if (streamACallBack != null)
+                                        streamACallBack.onError(null, throwable);
+                                } else {
+                                    String errorBody = e.response().errorBody().string();
+
+                                    AnthropicError error = mapper.readValue(errorBody,
+                                            AnthropicError.class);
+                                    if (streamACallBack != null)
+                                        streamACallBack.onError(new AnthropicHttpException(error, e),
+                                                throwable);
+                                }
+                            } catch (IOException ex) {
+                                // couldn't parse OpenAI error
+                                if (streamACallBack != null) streamACallBack.onError(null, throwable);
+                            } finally {
+                                if (streamACallBack != null) streamACallBack.onLoading(false);
+                                streamACallBack = null;
+                                compositeDisposable.clear();
+                            }
+                        },
+                        () -> {
+                            if (streamACallBack != null) streamACallBack.onCompletion();
+                            streamACallBack = null;
+                            compositeDisposable.clear();
+                        });
+
+        compositeDisposable.add(disposable);
+        requestList.put("streamAChatCompletion", apiCall);
+    }
     public interface StreamCallBack {
 
         void onSuccess(ChatCompletionChunk result);
@@ -963,6 +1155,17 @@ public class OpenAiService {
         void onSuccess(ChatGCompletionResponse result);
 
         void onError(GoogleHttpException error, Throwable Throwable);
+
+        void onCompletion();
+
+        void onLoading(boolean isLoading);
+
+    }
+    public interface StreamACallBack {
+
+        void onSuccess(ChatACompletionChoice result);
+
+        void onError(AnthropicHttpException error, Throwable Throwable);
 
         void onCompletion();
 
@@ -997,6 +1200,16 @@ public class OpenAiService {
 
     }
 
+    public interface ResultACallBack {
+
+        void onSuccess(ChatACompletionResponse result);
+
+        void onError(AnthropicHttpException error, Throwable Throwable);
+
+        void onLoading(boolean isLoading);
+
+    }
+
 
     /**
      * Calls the Open AI api and returns a Flowable of SSE for streaming
@@ -1010,6 +1223,9 @@ public class OpenAiService {
 
     public static Flowable<SSE> streamG(Call<ResponseBody> apiCall) {
         return streamG(apiCall, false);
+    }
+    public static Flowable<SSE> streamA(Call<ResponseBody> apiCall) {
+        return streamA(apiCall, false);
     }
 
     /**
@@ -1033,6 +1249,13 @@ public class OpenAiService {
         return Flowable.create(emitter -> apiCall.enqueue(new ResponseBodyGCallback(emitter,
                 emitDone)), BackpressureStrategy.BUFFER);
     }
+    public static Flowable<SSE> streamA(Call<ResponseBody> apiCall, boolean emitDone) {
+        //apiCall.enqueue为retrofit手动调用okHttp，所以默认情况下，在Android平台，因为平台判断
+        //所以默认回调在主线程，但是这里ResponseBodyCallback内部进行数据读写、网络等耗时操作，需要在子线程进行操作
+        //方法有两种，可以在retrofit传入线程池，或者ResponseBodyCallback回调中切换到子线程
+        return Flowable.create(emitter -> apiCall.enqueue(new ResponseBodyACallback(emitter,
+                emitDone)), BackpressureStrategy.BUFFER);
+    }
 
     /**
      * Calls the Open AI api and returns a Flowable of type T for streaming
@@ -1049,6 +1272,10 @@ public class OpenAiService {
     public static <T> Flowable<T> streamG(Call<ResponseBody> apiCall, Class<T> cl) {
 
         return streamG(apiCall).map(sse -> mapper.readValue(sse.getData(), cl));
+    }
+    public static <T> Flowable<T> streamA(Call<ResponseBody> apiCall, Class<T> cl) {
+
+        return streamA(apiCall).map(sse -> mapper.readValue(sse.getData(), cl));
     }
 
     public void clearRequest() {
@@ -1114,7 +1341,7 @@ public class OpenAiService {
 
     public static OpenAiApi buildApi(String token, long second) {
         ObjectMapper mapper = defaultObjectMapper();
-        OkHttpClient client = defaultClient(token, second, BASE_URL, false);
+        OkHttpClient client = defaultClient(token, second, BASE_URL, LLMType.openAi);
         Retrofit retrofit = defaultRetrofit(client, mapper, BASE_URL,
                 client.dispatcher().executorService());
 
@@ -1129,7 +1356,7 @@ public class OpenAiService {
         return mapper;
     }
 
-    public static OkHttpClient defaultClient(String token, long second, String url, boolean isGoogle) {
+    public static OkHttpClient defaultClient(String token, long second, String url, LLMType llmType) {
 
         HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor(s -> {
 //            Log.i("test",s);
@@ -1137,7 +1364,7 @@ public class OpenAiService {
         loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
 
         return new OkHttpClient.Builder()
-                .addInterceptor(new AuthenticationInterceptor(token, url, isGoogle))
+                .addInterceptor(new AuthenticationInterceptor(token, url, llmType))
 //                .addInterceptor(loggingInterceptor)
                 .connectionPool(new ConnectionPool(5, 1, TimeUnit.SECONDS))
                 .readTimeout(second * 1000, TimeUnit.MILLISECONDS)

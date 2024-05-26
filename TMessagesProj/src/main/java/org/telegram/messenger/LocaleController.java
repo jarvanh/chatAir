@@ -2134,16 +2134,27 @@ public class LocaleController {
 
     public static String formatApiUrl(String url) {
 
+        return formatApiUrl(url, true);
+    }
+
+    public static String formatApiUrl(String url, boolean isHttps) {
+
         if (TextUtils.isEmpty(url)) return "";
 
         String baseUrl = url;
 
-        baseUrl = baseUrl.replace("http://", "https://");
-
         baseUrl = baseUrl.toLowerCase(Locale.US);
 
-        if (!(baseUrl.contains("https://") || baseUrl.contains("http://"))) {
-            baseUrl = "https://" + baseUrl;
+        if (isHttps) {
+            baseUrl = baseUrl.replace("http://", "https://");
+
+            if (!(baseUrl.contains("https://"))) {
+                baseUrl = "https://" + baseUrl;
+            }
+        } else {
+            if (!(baseUrl.contains("https://") || baseUrl.contains("http://"))) {
+                baseUrl = "https://" + baseUrl;
+            }
         }
 
         return baseUrl;

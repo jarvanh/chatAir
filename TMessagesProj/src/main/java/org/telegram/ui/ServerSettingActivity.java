@@ -5,6 +5,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
@@ -48,6 +49,12 @@ public class ServerSettingActivity extends BaseFragment implements NotificationC
     private int apiKeyGoogleSectionRow;
     private int apiServerGoogleHeaderRow;
     private int apiServerGoogleRow;
+    private int claudeSectionRow;
+    private int apiKeyClaudeHeaderRow;
+    private int apiKeyClaudeRow;
+    private int apiKeyClaudeSectionRow;
+    private int apiServerClaudeHeaderRow;
+    private int apiServerClaudeRow;
 
     private int rowCount = 0;
 
@@ -71,6 +78,15 @@ public class ServerSettingActivity extends BaseFragment implements NotificationC
 
         apiServerGoogleHeaderRow = rowCount++;
         apiServerGoogleRow = rowCount++;
+
+        claudeSectionRow = rowCount++;
+
+        apiKeyClaudeHeaderRow = rowCount++;
+        apiKeyClaudeRow = rowCount++;
+        apiKeyClaudeSectionRow = rowCount++;
+
+        apiServerClaudeHeaderRow = rowCount++;
+        apiServerClaudeRow = rowCount++;
         return super.onFragmentCreate();
     }
 
@@ -120,13 +136,23 @@ public class ServerSettingActivity extends BaseFragment implements NotificationC
 
             if (position == apiKeyRow) {
                 presentFragment(new ChangeApiKeyActivity(getResourceProvider()));
+                AndroidUtilities.logEvent("ChangeApiKey", "");
 
             } else if (position == apiServerRow){
                 presentFragment(new ChangeApiServerActivity(getResourceProvider()));
+                AndroidUtilities.logEvent("ChangeApiServer", "");
             } else if (position == apiKeyGoogleRow) {
                 presentFragment(new ChangeGoogleApiKeyActivity(getResourceProvider()));
+                AndroidUtilities.logEvent("ChangeGoogleApiKey", "");
             } else if (position == apiServerGoogleRow){
                 presentFragment(new ChangeGoogleApiServerActivity(getResourceProvider()));
+                AndroidUtilities.logEvent("ChangeGoogleApiServer", "");
+            } else if (position == apiKeyClaudeRow) {
+                presentFragment(new ChangeClaudeApiKeyActivity(getResourceProvider()));
+                AndroidUtilities.logEvent("ChangeClaudeApiKey", "");
+            } else if (position == apiServerClaudeRow){
+                presentFragment(new ChangeClaudeApiServerActivity(getResourceProvider()));
+                AndroidUtilities.logEvent("ChangeClaudeApiServer", "");
             }
 
         });
@@ -197,6 +223,10 @@ public class ServerSettingActivity extends BaseFragment implements NotificationC
                         headerCell.setText(LocaleController.getString("ApiKeyGoogle", R.string.ApiKeyGoogle));
                     } else if (position == apiServerGoogleHeaderRow) {
                         headerCell.setText(LocaleController.getString("ApiServerGoogle", R.string.ApiServerGoogle));
+                    } else if (position == apiKeyClaudeHeaderRow) {
+                        headerCell.setText(LocaleController.getString("ApiKeyClaude", R.string.ApiKeyClaude));
+                    } else if (position == apiServerClaudeHeaderRow) {
+                        headerCell.setText(LocaleController.getString("ApiServerClaude", R.string.ApiServerClaude));
                     }
                     break;
                 }
@@ -224,6 +254,14 @@ public class ServerSettingActivity extends BaseFragment implements NotificationC
                         settingsCell.setTextAndValue(
                                 UserConfig.getInstance(currentAccount).apiServerGoogle,
                                 LocaleController.getString("ApiServerTips", R.string.ApiServerTips), false);
+                    } else if (position == apiKeyClaudeRow) {
+                        settingsCell.setTextAndValue(
+                                LocaleController.formatApiKey(UserConfig.getInstance(currentAccount).apiKeyClaude),
+                                LocaleController.getString("ApiKeyTips", R.string.ApiKeyTips), false);
+                    } else if (position == apiServerClaudeRow){
+                        settingsCell.setTextAndValue(
+                                UserConfig.getInstance(currentAccount).apiServerClaude,
+                                LocaleController.getString("ApiServerTips", R.string.ApiServerTips), false);
                     }
                 }
             }
@@ -232,13 +270,20 @@ public class ServerSettingActivity extends BaseFragment implements NotificationC
         @Override
         public int getItemViewType(int position) {
             if (position == apiKeyHeaderRow || position == apiServerHeaderRow
-                    || position == apiKeyGoogleHeaderRow || position == apiServerGoogleHeaderRow) {
+                    || position == apiKeyGoogleHeaderRow || position == apiServerGoogleHeaderRow
+                    || position == apiKeyClaudeHeaderRow || position == apiServerClaudeHeaderRow
+            ) {
                 return VIEW_TYPE_HEADER;
             } else if (position == apiKeyRow || position == apiServerRow
-                    || position == apiKeyGoogleRow || position == apiServerGoogleRow){
+                    || position == apiKeyGoogleRow || position == apiServerGoogleRow
+                    || position == apiKeyClaudeRow || position == apiServerClaudeRow
+            ){
                 return VIEW_TYPE_TEXT_DETAIL;
             } else if (position == apiKeySectionRow || position == apiKeyGoogleSectionRow
                     || position == googleSectionRow){
+                return VIEW_TYPE_SHADOW;
+            } else if (position == apiKeySectionRow || position == apiKeyClaudeSectionRow
+                    || position == claudeSectionRow){
                 return VIEW_TYPE_SHADOW;
             } else {
                 return 0;
@@ -258,6 +303,10 @@ public class ServerSettingActivity extends BaseFragment implements NotificationC
                 if (adapter != null) adapter.notifyItemChanged(apiKeyGoogleRow);
             } else if ((mask & MessagesController.UPDATE_MASK_GOOGLE_API_SERVER) != 0) {
                 if (adapter != null) adapter.notifyItemChanged(apiServerGoogleRow);
+            } else if ((mask & MessagesController.UPDATE_MASK_CLAUDE_API_KEY) != 0) {
+                if (adapter != null) adapter.notifyItemChanged(apiKeyClaudeRow);
+            } else if ((mask & MessagesController.UPDATE_MASK_CLAUDE_API_SERVER) != 0) {
+                if (adapter != null) adapter.notifyItemChanged(apiServerClaudeRow);
             }
         }
     }

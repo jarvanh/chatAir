@@ -6,6 +6,8 @@ import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
 import com.theokanning.openai.completion.chat.ChatGCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatGCompletionResponse;
+import com.theokanning.openai.completion.chat.anthropic.ChatACompletionRequest;
+import com.theokanning.openai.completion.chat.anthropic.ChatACompletionResponse;
 import com.theokanning.openai.edit.EditRequest;
 import com.theokanning.openai.edit.EditResult;
 import com.theokanning.openai.embedding.EmbeddingRequest;
@@ -143,4 +145,12 @@ public interface OpenAiApi {
     Call<ResponseBody> createGChatCompletionStream(
             @Path("model") String model,
             @Body ChatGCompletionRequest request);
+
+    @POST("v1/messages")
+    Single<ChatACompletionResponse> createAChatCompletion(
+            @Body ChatACompletionRequest request);
+
+    @Streaming
+    @POST("v1/messages")
+    Call<ResponseBody> createAChatCompletionStream(@Body ChatACompletionRequest request);
 }

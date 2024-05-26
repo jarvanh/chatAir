@@ -13,6 +13,11 @@ import android.widget.TextView;
 
 import com.theokanning.openai.OpenAiHttpException;
 import com.theokanning.openai.OpenAiResponse;
+import com.theokanning.openai.completion.chat.anthropic.AnthropicHttpException;
+import com.theokanning.openai.completion.chat.anthropic.ChatACompletionRequest;
+import com.theokanning.openai.completion.chat.anthropic.ChatACompletionResponse;
+import com.theokanning.openai.completion.chat.anthropic.ChatAMessageRole;
+import com.theokanning.openai.completion.chat.anthropic.ChatARequestMessage;
 import com.theokanning.openai.model.Model;
 import com.theokanning.openai.service.LLMType;
 import com.theokanning.openai.service.OpenAiService;
@@ -33,11 +38,12 @@ import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.LayoutHelper;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Created by flyun on 2023/7/15.
+ * Created by flyun on 2024/5/26.
  */
-public class ChangeApiServerActivity extends BaseFragment {
+public class ChangeClaudeApiServerActivity extends BaseFragment {
 
     private EditTextBoldCursor firstNameField;
     private View doneButton;
@@ -52,17 +58,17 @@ public class ChangeApiServerActivity extends BaseFragment {
 
     private volatile boolean isReq;
 
-    public ChangeApiServerActivity(Theme.ResourcesProvider resourcesProvider) {
+    public ChangeClaudeApiServerActivity(Theme.ResourcesProvider resourcesProvider) {
         this.resourcesProvider = resourcesProvider;
     }
 
     @Override
     public boolean onFragmentCreate() {
 
-        String token = UserConfig.getInstance(currentAccount).apiKey;
-        String apiServer = UserConfig.getInstance(currentAccount).apiServer;
+        String token = UserConfig.getInstance(currentAccount).apiKeyClaude;
+        String apiServer = UserConfig.getInstance(currentAccount).apiServerClaude;
 
-        openAiService = new OpenAiService(token, 5, apiServer, LLMType.openAi);
+        openAiService = new OpenAiService(token, 5, apiServer, LLMType.anthropic);
 
         return super.onFragmentCreate();
     }
@@ -77,8 +83,10 @@ public class ChangeApiServerActivity extends BaseFragment {
 
     @Override
     public View createView(Context context) {
-        actionBar.setItemsBackgroundColor(Theme.getColor(Theme.key_avatar_actionBarSelectorBlue, resourcesProvider), false);
-        actionBar.setItemsColor(Theme.getColor(Theme.key_actionBarDefaultIcon, resourcesProvider), false);
+        actionBar.setItemsBackgroundColor(Theme.getColor(Theme.key_avatar_actionBarSelectorBlue,
+                resourcesProvider), false);
+        actionBar.setItemsColor(Theme.getColor(Theme.key_actionBarDefaultIcon, resourcesProvider),
+                false);
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         actionBar.setAllowOverlayTitle(true);
         actionBar.setTitle(LocaleController.getString("ChangeApiServer", R.string.ChangeApiServer));
@@ -93,8 +101,8 @@ public class ChangeApiServerActivity extends BaseFragment {
                     }
                 } else if (id == find_key_button) {
                     if (firstNameField != null) {
-                        firstNameField.setText(UserConfig.defaultApiServer);
-                        firstNameField.setSelection(UserConfig.defaultApiServer.length());
+                        firstNameField.setText(UserConfig.defaultApiServerClaude);
+                        firstNameField.setSelection(UserConfig.defaultApiServerClaude.length());
 //                        AlertsCreator.showSimpleToast(ChangeApiServerActivity.this,
 //                                LocaleController.getString("DefaultApiServe", R.string.DefaultApiServe));
                     }
@@ -103,12 +111,13 @@ public class ChangeApiServerActivity extends BaseFragment {
         });
 
         ActionBarMenu menu = actionBar.createMenu();
-        findKeyButton = menu.addItemWithWidth(find_key_button, R.drawable.msg_link, AndroidUtilities.dp(56), LocaleController.getString("FindKeyUrl", R.string.FindKeyUrl));
+        findKeyButton = menu.addItemWithWidth(find_key_button, R.drawable.msg_link, AndroidUtilities.dp(56), LocaleController.getString("FindClaudeKeyUrl", R.string.FindClaudeKeyUrl));
         doneButton = menu.addItemWithWidth(done_button, R.drawable.ic_ab_done, AndroidUtilities.dp(56), LocaleController.getString("Done", R.string.Done));
 
         LinearLayout linearLayout = new LinearLayout(context);
         fragmentView = linearLayout;
-        fragmentView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        fragmentView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
         ((LinearLayout) fragmentView).setOrientation(LinearLayout.VERTICAL);
         fragmentView.setOnTouchListener((v, event) -> true);
 
@@ -122,30 +131,30 @@ public class ChangeApiServerActivity extends BaseFragment {
         firstNameField.setHintTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteHintText, resourcesProvider));
         firstNameField.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
         firstNameField.setBackgroundDrawable(null);
-        firstNameField.setLineColors(getThemedColor(Theme.key_windowBackgroundWhiteInputField), getThemedColor(Theme.key_windowBackgroundWhiteInputFieldActivated), getThemedColor(Theme.key_windowBackgroundWhiteRedText3));
+        firstNameField.setLineColors(getThemedColor(Theme.key_windowBackgroundWhiteInputField),
+                getThemedColor(Theme.key_windowBackgroundWhiteInputFieldActivated),
+                getThemedColor(Theme.key_windowBackgroundWhiteRedText3));
         firstNameField.setMaxLines(1);
         firstNameField.setLines(1);
         firstNameField.setSingleLine(true);
         firstNameField.setGravity(LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT);
         firstNameField.setInputType(InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_AUTO_CORRECT);
-        String apiServer = UserConfig.getInstance(currentAccount).apiServer;
-        firstNameField.setHint(UserConfig.defaultApiServer);
+        String apiServer = UserConfig.getInstance(currentAccount).apiServerClaude;
+        firstNameField.setHint(UserConfig.defaultApiServerClaude);
         firstNameField.setCursorColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
         firstNameField.setCursorSize(AndroidUtilities.dp(20));
         firstNameField.setCursorWidth(1.5f);
 
-        if (UserConfig.defaultApiServer.equals(apiServer)) {
+        if (UserConfig.defaultApiServerClaude.equals(apiServer)) {
             firstNameField.setText("");
         } else {
             firstNameField.setText(apiServer);
             firstNameField.setSelection(apiServer.length());
         }
-        linearLayout.addView(firstNameField, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 36, 24, 24, 24, 0));
+        linearLayout.addView(firstNameField, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,
+                36, 24, 24, 24, 0));
 
         TextView buttonTextView = new TextView(context);
-
-        // todo 验证改为发送一条消息
-//        buttonTextView.setVisibility(View.GONE);
 
         buttonTextView.setPadding(AndroidUtilities.dp(34), 0, AndroidUtilities.dp(34), 0);
         buttonTextView.setGravity(Gravity.CENTER);
@@ -155,7 +164,9 @@ public class ChangeApiServerActivity extends BaseFragment {
         buttonTextView.setText(LocaleController.getString("ValidateTitle", R.string.ValidateTitle));
 
         buttonTextView.setTextColor(Theme.getColor(Theme.key_featuredStickers_buttonText));
-        buttonTextView.setBackgroundDrawable(Theme.createSimpleSelectorRoundRectDrawable(AndroidUtilities.dp(6), Theme.getColor(Theme.key_featuredStickers_addButton), Theme.getColor(Theme.key_featuredStickers_addButtonPressed)));
+        buttonTextView.setBackgroundDrawable(Theme.createSimpleSelectorRoundRectDrawable(
+                AndroidUtilities.dp(6), Theme.getColor(Theme.key_featuredStickers_addButton),
+                Theme.getColor(Theme.key_featuredStickers_addButtonPressed)));
 
         buttonTextView.setOnClickListener(view -> {
             if (getParentActivity() == null) {
@@ -164,7 +175,8 @@ public class ChangeApiServerActivity extends BaseFragment {
             verifyKey();
         });
 
-        linearLayout.addView(buttonTextView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48, Gravity.BOTTOM, 16, 15, 16, 16));
+        linearLayout.addView(buttonTextView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,
+                48, Gravity.BOTTOM, 16, 15, 16, 16));
 
 
         return fragmentView;
@@ -192,7 +204,7 @@ public class ChangeApiServerActivity extends BaseFragment {
         String formatUrl = formatUrl(newFirst);
         if (TextUtils.isEmpty(formatUrl)) {
             AlertsCreator.processError(LocaleController.getString("MalformedUrl", R.string.MalformedUrl),
-                    ChangeApiServerActivity.this);
+                    ChangeClaudeApiServerActivity.this);
             return;
         }
         if (!newFirst.equals(formatUrl)) {
@@ -201,16 +213,16 @@ public class ChangeApiServerActivity extends BaseFragment {
             firstNameField.setSelection(formatUrl.length());
         }
 
-        String apiServer = UserConfig.getInstance(currentAccount).apiServer;
+        String apiServer = UserConfig.getInstance(currentAccount).apiServerClaude;
         if (apiServer != null && apiServer.equals(newFirst)) {
             return;
         }
 
-        UserConfig.getInstance(currentAccount).apiServer = newFirst;
+        UserConfig.getInstance(currentAccount).apiServerClaude = newFirst;
         UserConfig.getInstance(currentAccount).saveConfig(false);
 
         NotificationCenter.getInstance(currentAccount)
-                .postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_API_SERVER);
+                .postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_CLAUDE_API_SERVER);
 
         finishFragment();
     }
@@ -223,10 +235,9 @@ public class ChangeApiServerActivity extends BaseFragment {
         } else if (firstNameField.getText().length() > 0) {
             newFirst = firstNameField.getText().toString().replace("\n", "");
         } else {
-            newFirst = UserConfig.getInstance(currentAccount).apiServer;
+            newFirst = UserConfig.getInstance(currentAccount).apiServerClaude;
 
         }
-        isReq = true;
 
         if (TextUtils.isEmpty(newFirst)) return;
 
@@ -234,7 +245,7 @@ public class ChangeApiServerActivity extends BaseFragment {
         if (formatUrl == null) {
             isReq = false;
             AlertsCreator.processError(LocaleController.getString("MalformedUrl", R.string.MalformedUrl),
-                    ChangeApiServerActivity.this);
+                    ChangeClaudeApiServerActivity.this);
             return;
         }
         if (!newFirst.equals(formatUrl)) {
@@ -243,44 +254,62 @@ public class ChangeApiServerActivity extends BaseFragment {
             firstNameField.setSelection(formatUrl.length());
         }
 
-        openAiService.changeLLMServer(newFirst, LLMType.openAi);
+        openAiService.changeLLMServer(newFirst, LLMType.anthropic);
 
-        openAiService.baseCompletion(openAiService.listModels,
-                new OpenAiService.CompletionCallBack<OpenAiResponse<Model>>() {
-                    @Override
-                    public void onSuccess(Object o) {
-//                        OpenAiResponse<Model> openAiResponse = (OpenAiResponse<Model>) o;
+        isReq = true;
 
-                        AndroidUtilities.runOnUIThread(() -> {
-                            isReq = false;
+        ChatACompletionRequest completionRequest = ChatACompletionRequest.builder()
+                .temperature(1.0)
+                .maxTokens(256)
+                .stream(false)
+                .model("claude-3-opus-20240229")
+                .build();
 
-                            AlertsCreator.showSimpleAlert(ChangeApiServerActivity.this,
-                                    LocaleController.getString("ValidateSuccess", R.string.ValidateSuccess));
-                        });
+        List<ChatARequestMessage> chatMessageList = new ArrayList<>();
+        ChatARequestMessage systemUserMessage = new ChatARequestMessage();
+        systemUserMessage.setRole(ChatAMessageRole.USER.value());
+        systemUserMessage.setContent("hi");
+        chatMessageList.add(systemUserMessage);
+        completionRequest.setMessages(chatMessageList);
 
-                    }
+        openAiService.createChatACompletion(completionRequest, new OpenAiService.ResultACallBack() {
+            @Override
+            public void onSuccess(ChatACompletionResponse result) {
+                AndroidUtilities.runOnUIThread(() -> {
+                    isReq = false;
 
-                    @Override
-                    public void onError(OpenAiHttpException error, Throwable throwable) {
-                        AndroidUtilities.runOnUIThread(() -> {
-                            String errorTx;
-                            isReq = false;
-                            if (error != null) {
-                                errorTx = error.getMessage();
-                            } else {
-                                errorTx = throwable.getMessage();
-                            }
-
-                            AlertsCreator.processError(errorTx, ChangeApiServerActivity.this);
-                        });
-                    }
+                    AlertsCreator.showSimpleAlert(ChangeClaudeApiServerActivity.this,
+                            LocaleController.getString("ValidateSuccess", R.string.ValidateSuccess));
                 });
+            }
+
+            @Override
+            public void onError(AnthropicHttpException error, Throwable Throwable) {
+                AndroidUtilities.runOnUIThread(() -> {
+                    String errorTx;
+                    isReq = false;
+                    if (error != null) {
+                        errorTx = error.getMessage();
+                    } else {
+                        errorTx = Throwable.getMessage();
+                    }
+
+                    AlertsCreator.processError(errorTx, ChangeClaudeApiServerActivity.this);
+                });
+            }
+
+            @Override
+            public void onLoading(boolean isLoading) {
+
+            }
+        });
+
     }
 
     private String formatUrl (String url) {
 
         //添加、格式化https
-        String formatUrl = LocaleController.formatApiUrl(url, false);
+        String formatUrl = LocaleController.formatApiUrl(url);
 
         if (TextUtils.isEmpty(formatUrl)) return null;
 

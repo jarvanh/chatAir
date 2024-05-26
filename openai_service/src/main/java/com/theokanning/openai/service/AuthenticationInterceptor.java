@@ -21,18 +21,16 @@ public class AuthenticationInterceptor implements Interceptor {
     private String url = null;
     private boolean isOpenRouter = false;
 
-    private boolean isGoogle = false;
+    private LLMType llmType;
 
-    AuthenticationInterceptor(String token, String oldUrl, boolean isGoogle) {
-//        Objects.requireNonNull(token, "Token required");
+    AuthenticationInterceptor(String token, String oldUrl, LLMType llmType) {
         this.token = token;
         this.oldUrl = oldUrl;
-        this.isGoogle = isGoogle;
+        this.llmType = llmType;
         checkOpenRouter(oldUrl);
     }
 
     public void setToken(String token) {
-//        Objects.requireNonNull(token, "Token required");
         this.token = token;
     }
     public void setUrl(String url) {
@@ -41,8 +39,17 @@ public class AuthenticationInterceptor implements Interceptor {
         checkOpenRouter(url);
     }
 
+    public void setLlmType(LLMType llmType) {
+        this.llmType = llmType;
+    }
+
     public void setGoogle(boolean google) {
-        isGoogle = google;
+
+        if (google) {
+            llmType = LLMType.google;
+        } else {
+            llmType =  LLMType.unKnow;
+        }
     }
 
     private void checkOpenRouter(String checkUrl) {
@@ -53,11 +60,18 @@ public class AuthenticationInterceptor implements Interceptor {
     @Override
     public Response intercept(Chain chain) throws IOException {
         Request request;
-        if (isGoogle) {
+        if (llmType == LLMType.google) {
             // Google
             request = chain.request()
                     .newBuilder()
                     .header("x-goog-api-key", token)
+                    .build();
+        } else if (llmType == LLMType.anthropic) {
+            request = chain.request()
+                    .newBuilder()
+                    .header("x-api-key", token)
+                    .header("anthropic-version", "2023-06-01")
+                    .header("content-type", "application/json")
                     .build();
         } else if (!isOpenRouter) {
             // 默认

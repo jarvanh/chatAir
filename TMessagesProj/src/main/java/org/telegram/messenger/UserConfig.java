@@ -105,6 +105,7 @@ public class UserConfig extends BaseController {
 
     public final static String defaultApiServer = "https://api.openai.com/";
     public final static String defaultApiServerGoogle = "https://generativelanguage.googleapis.com/";
+    public final static String defaultApiServerClaude = "https://api.claude.ai/";
 
     public int aiModel = defaultAiModel;
     public double temperature = defaultTemperature;
@@ -120,6 +121,9 @@ public class UserConfig extends BaseController {
 
     public String apiKeyGoogle;
     public String apiServerGoogle = defaultApiServerGoogle;
+
+    public String apiKeyClaude;
+    public String apiServerClaude = defaultApiServerClaude;
 
     public boolean streamResponses = defaultStreamResponses;
     public boolean renderMarkdown = defaultRenderMarkdown;
@@ -266,6 +270,8 @@ public class UserConfig extends BaseController {
                         editor.putString("apiServer", apiServer);
                         editor.putString("apiKeyGoogle", apiKeyGoogle);
                         editor.putString("apiServerGoogle", apiServerGoogle);
+                        editor.putString("apiKeyClaude", apiKeyClaude);
+                        editor.putString("apiServerClaude", apiServerClaude);
                         editor.putBoolean("streamResponses", streamResponses);
                         editor.putBoolean("renderMarkdown", renderMarkdown);
                         editor.putBoolean("autoHideKeyboard", autoHideKeyboard);
@@ -484,6 +490,9 @@ public class UserConfig extends BaseController {
 
                 apiKeyGoogle = preferences.getString("apiKeyGoogle", "");
                 apiServerGoogle = preferences.getString("apiServerGoogle", defaultApiServerGoogle);
+
+                apiKeyClaude = preferences.getString("apiKeyClaude", "");
+                apiServerClaude = preferences.getString("apiServerClaude", defaultApiServerClaude);
             }
 
             configLoaded = true;
@@ -510,6 +519,7 @@ public class UserConfig extends BaseController {
                 "GPT-4-vision-preview (Picture model)", true));
 //        initOpenrouter();
         initGoogle();
+        initClaude();
         aiModelList.put(0, new AiModelBean(LocaleController.getString("CustomModel", R.string.CustomModel), "custom Model", true));
 
     }
@@ -544,6 +554,15 @@ public class UserConfig extends BaseController {
         aiModelList.put(801, new AiModelBean("Gemini Pro", "gemini-pro", true));
         aiModelList.put(802, new AiModelBean("Gemini Pro Vision", "gemini-pro-vision",
                 "Gemini Pro Vision (Picture model)", true));
+
+    }
+
+    public void initClaude() {
+        if (aiModelList == null) return;
+        aiModelList.put(901, new AiModelBean("Claude 3 haiku", "claude-3-haiku-20240307",
+                true));
+        aiModelList.put(902, new AiModelBean("Claude 3 opus", "claude-3-opus-20240229",
+                 true));
 
     }
 
@@ -611,6 +630,15 @@ public class UserConfig extends BaseController {
 
     }
 
+    public boolean isDefaultClaude() {
+
+        int aiModel = UserConfig.getInstance(currentAccount).aiModel;
+        boolean isClaudeProVision = UserConfig.getInstance(currentAccount).isJudgeByModelClaude(aiModel);
+
+        return isClaudeProVision;
+
+    }
+
     public boolean isDefaultVision() {
 
         int aiModel = UserConfig.getInstance(currentAccount).aiModel;
@@ -675,6 +703,14 @@ public class UserConfig extends BaseController {
 
         return aiModelReal;
 
+    }
+
+    public boolean isJudgeByModelClaude(int aiModel) {
+
+        if (aiModel == 901) return true;
+        if (aiModel == 902) return true;
+
+        return false;
     }
 
     public static boolean isUserGemini(int currentAccount, long userId) {
@@ -896,6 +932,8 @@ public class UserConfig extends BaseController {
             apiServer = defaultApiServer;
             apiKeyGoogle = "";
             apiServerGoogle = defaultApiServerGoogle;
+            apiKeyClaude = "";
+            apiServerClaude = defaultApiServerClaude;
         }
 
         if (!hasActivated) {

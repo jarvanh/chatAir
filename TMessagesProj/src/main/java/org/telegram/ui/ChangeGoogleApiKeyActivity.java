@@ -11,9 +11,15 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.theokanning.openai.OpenAiHttpException;
-import com.theokanning.openai.OpenAiResponse;
-import com.theokanning.openai.model.Model;
+import com.flyun.base.BaseMessage;
+import com.theokanning.openai.GoogleHttpException;
+import com.theokanning.openai.completion.chat.ChatGCompletionRequest;
+import com.theokanning.openai.completion.chat.ChatGCompletionResponse;
+import com.theokanning.openai.completion.chat.ChatGGenerationConfig;
+import com.theokanning.openai.completion.chat.ChatGMessage;
+import com.theokanning.openai.completion.chat.ChatGMessagePart;
+import com.theokanning.openai.completion.chat.ChatGMessageRole;
+import com.theokanning.openai.service.LLMType;
 import com.theokanning.openai.service.OpenAiService;
 
 import org.telegram.messenger.AndroidUtilities;
@@ -34,6 +40,7 @@ import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.LayoutHelper;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import okhttp3.internal.Util;
 
@@ -64,7 +71,7 @@ public class ChangeGoogleApiKeyActivity extends BaseFragment {
 
         String token = UserConfig.getInstance(currentAccount).apiKeyGoogle;
         String apiServer = UserConfig.getInstance(currentAccount).apiServerGoogle;
-        openAiService = new OpenAiService(token, 5, apiServer, true);
+        openAiService = new OpenAiService(token, 5, apiServer, LLMType.google);
 
         return super.onFragmentCreate();
     }
@@ -144,9 +151,6 @@ public class ChangeGoogleApiKeyActivity extends BaseFragment {
         buttonTextView.setTextColor(Theme.getColor(Theme.key_featuredStickers_buttonText));
         buttonTextView.setBackgroundDrawable(Theme.createSimpleSelectorRoundRectDrawable(AndroidUtilities.dp(6), Theme.getColor(Theme.key_featuredStickers_addButton), Theme.getColor(Theme.key_featuredStickers_addButtonPressed)));
 
-        // todo 修改后验证恢复
-        buttonTextView.setVisibility(View.GONE);
-
         buttonTextView.setOnClickListener(view -> {
             if (getParentActivity() == null) {
                 return;
@@ -223,27 +227,47 @@ public class ChangeGoogleApiKeyActivity extends BaseFragment {
 
         if (TextUtils.isEmpty(newFirst) || checkValue(newFirst)) return;
 
-        openAiService.changeMatchTokenGoogle(newFirst, UserConfig.getInstance(currentAccount).apiServerGoogle);
+        openAiService.changeLLMToken(newFirst, LLMType.google);
 
         isReq = true;
 
-        openAiService.baseCompletion(openAiService.listModels,
-                new OpenAiService.CompletionCallBack<OpenAiResponse<Model>>() {
+        ChatGCompletionRequest completionRequest = new ChatGCompletionRequest();
+
+        // 配置模型
+        ChatGGenerationConfig chatGGenerationConfig = ChatGGenerationConfig.builder()
+                .temperature(1.0)
+                .max_output_tokens(256)
+                .build();
+
+        completionRequest.setGenerationConfig(chatGGenerationConfig);
+
+        List<ChatGMessage> chatGMessageList = new ArrayList<>();
+
+        ChatGMessage systemMessage = new ChatGMessage();
+        systemMessage.setRole(ChatGMessageRole.USER.value());
+
+        List<ChatGMessagePart> parts = new ArrayList<>();
+        // 添加文本
+        ChatGMessagePart part = ChatGMessagePart.builder().text("hi").build();
+        parts.add(part);
+        systemMessage.setParts(parts);
+
+        chatGMessageList.add(systemMessage);
+
+        completionRequest.setContents(chatGMessageList);
+
+        openAiService.createChatGCompletion(completionRequest, "gemini-pro",
+                new BaseMessage(), new OpenAiService.ResultGCallBack() {
                     @Override
-                    public void onSuccess(Object o) {
-//                        OpenAiResponse<Model> openAiResponse = (OpenAiResponse<Model>) o;
+                    public void onSuccess(ChatGCompletionResponse result) {
+                        isReq = false;
 
-                        AndroidUtilities.runOnUIThread(() -> {
-                            isReq = false;
-
-                            AlertsCreator.showSimpleAlert(ChangeGoogleApiKeyActivity.this,
-                                    LocaleController.getString("ValidateSuccess", R.string.ValidateSuccess));
-                        });
-
+                        AlertsCreator.showSimpleAlert(ChangeGoogleApiKeyActivity.this,
+                                LocaleController.getString("ValidateSuccess", R.string.ValidateSuccess));
                     }
 
                     @Override
-                    public void onError(OpenAiHttpException error, Throwable throwable) {
+                    public void onError(GoogleHttpException error, Throwable throwable) {
                         AndroidUtilities.runOnUIThread(() -> {
                             String errorTx;
                             isReq = false;
@@ -255,6 +279,11 @@ public class ChangeGoogleApiKeyActivity extends BaseFragment {
 
                             AlertsCreator.processError(errorTx, ChangeGoogleApiKeyActivity.this);
                         });
+                    }
+
+                    @Override
+                    public void onLoading(boolean isLoading) {
+
                     }
                 });
     }

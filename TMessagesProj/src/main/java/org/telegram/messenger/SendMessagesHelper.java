@@ -63,6 +63,15 @@ import com.theokanning.openai.completion.chat.ChatGMessageRole;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.completion.chat.ChatMessageRole;
 import com.theokanning.openai.completion.chat.ChatMultiMessage;
+import com.theokanning.openai.completion.chat.anthropic.AnthropicHttpException;
+import com.theokanning.openai.completion.chat.anthropic.ChatACompletionChoice;
+import com.theokanning.openai.completion.chat.anthropic.ChatACompletionRequest;
+import com.theokanning.openai.completion.chat.anthropic.ChatACompletionResponse;
+import com.theokanning.openai.completion.chat.anthropic.ChatAContentType;
+import com.theokanning.openai.completion.chat.anthropic.ChatAMessage;
+import com.theokanning.openai.completion.chat.anthropic.ChatAMessageRole;
+import com.theokanning.openai.completion.chat.anthropic.ChatARequestMessage;
+import com.theokanning.openai.service.LLMType;
 import com.theokanning.openai.service.OpenAiService;
 
 import org.json.JSONObject;
@@ -845,18 +854,28 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 //初始化openAi
                 boolean isGeminiProVision
                         = UserConfig.getInstance(currentAccount).isDefaultGeminiProVision();
+                boolean isClaude
+                        = UserConfig.getInstance(currentAccount).isDefaultClaude();
 
                 String token;
                 String apiServer;
+                LLMType llmType;
+                // todo 进入聊天，无法自动更换
                 // 初步只根据全局默认切换配置，进入不同聊天窗口再根据个人配置发送时切换配置
-                if (!isGeminiProVision) {
-                    token = UserConfig.getInstance(currentAccount).apiKey;
-                    apiServer = UserConfig.getInstance(currentAccount).apiServer;
-                } else {
+                if (isGeminiProVision) {
                     token = UserConfig.getInstance(currentAccount).apiKeyGoogle;
                     apiServer = UserConfig.getInstance(currentAccount).apiServerGoogle;
+                    llmType = LLMType.google;
+                } else if(isClaude) {
+                    token = UserConfig.getInstance(currentAccount).apiKeyClaude;
+                    apiServer = UserConfig.getInstance(currentAccount).apiServerClaude;
+                    llmType = LLMType.anthropic;
+                } else {
+                    token = UserConfig.getInstance(currentAccount).apiKey;
+                    apiServer = UserConfig.getInstance(currentAccount).apiServer;
+                    llmType = LLMType.openAi;
                 }
-                openAiService = new OpenAiService(token, 60, apiServer, isGeminiProVision);
+                openAiService = new OpenAiService(token, 60, apiServer, llmType);
             }
         });
     }
@@ -5767,6 +5786,8 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             boolean isGemini;
             boolean isGeminiProVision;
 
+            boolean isClaude;
+
             if ((user.flags2 & MessagesController.UPDATE_MASK_CHAT_AIR_PROMPT) != 0
                     && !TextUtils.isEmpty(user.prompt)) {
                 prompt = user.prompt;
@@ -5788,6 +5809,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             isGemini = UserConfig.getInstance(currentAccount).isJudgeByModelGemini(aiModel);
             isGeminiProVision = UserConfig.getInstance(currentAccount).isJudgeByModelGeminiProVision(aiModel);
 
+            isClaude = UserConfig.getInstance(currentAccount).isJudgeByModelClaude(aiModel);
 
             if ((user.flags2 & MessagesController.UPDATE_MASK_CHAT_AIR_AI_TEMPERATURE) != 0
                     && user.flags2 != -1) {
@@ -5808,6 +5830,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             if (isGemini) {
                 sendMessageGoogle(aiModelReal, prompt, temperature, tokenLimit, originalPath,
                         isGeminiProVision, msgObj, newMsgObj);
+            } else if (isClaude) {
+                sendMessageClaude(aiModelReal, prompt, temperature, tokenLimit, originalPath,
+                        false, msgObj, newMsgObj);
             } else {
 
                 openAiService.switchDefault(UserConfig.getInstance(currentAccount).apiKey,
@@ -6639,6 +6664,53 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
     }
 
+    private List<ChatARequestMessage> getChatChatAMessageList(final String prompt, String originalPath,
+                                                              boolean isClaudeVision, final MessageObject msgObj) {
+        List<ChatARequestMessage> chatMessageList = new ArrayList<>();
+
+        //添加系统prompt，仅文本模式
+        if (!TextUtils.isEmpty(prompt) && !isClaudeVision) {
+
+            ChatARequestMessage systemUserMessage = new ChatARequestMessage();
+            systemUserMessage.setRole(ChatAMessageRole.USER.value());
+            systemUserMessage.setContent(prompt);
+            chatMessageList.add(systemUserMessage);
+
+            ChatARequestMessage systemMessage = new ChatARequestMessage();
+            systemMessage.setRole(ChatAMessageRole.ASSISTANT.value());
+            systemMessage.setContent("ok");
+
+            chatMessageList.add(systemMessage);
+
+        }
+
+        // 添加历史消息
+        for (int i = contextMessages.size() - 1; i >= 0; i --){
+            ChatARequestMessage chatMessage = new ChatARequestMessage();
+            TLRPC.Message message = contextMessages.get(i);
+
+            chatMessage.setRole(message.out ? ChatAMessageRole.USER.value()
+                    : ChatAMessageRole.ASSISTANT.value());
+            chatMessage.setContent(message.message);
+
+            chatMessageList.add(chatMessage);
+
+        }
+
+        //添加需要发送的内容
+        if (msgObj.messageOwner != null && !TextUtils.isEmpty(msgObj.messageOwner.message)) {
+            ChatARequestMessage sendChatMessage = new ChatARequestMessage();
+            sendChatMessage.setRole(ChatMessageRole.USER.value());
+            sendChatMessage.setContent(msgObj.messageOwner.message);
+            chatMessageList.add(sendChatMessage);
+        }
+
+
+
+        return chatMessageList;
+
+    }
+
     private void processMessage(String content, long userId, long promptTokens, long completionTokens) {
 
         if (content == null) return;
@@ -7003,6 +7075,285 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
         }
 
+    }
+
+    private void sendMessageClaude(String aiModelReal, final String prompt, Double temperature,
+                                   int tokenLimit, String originalPath, boolean isClaudeProVision,
+                                   final MessageObject msgObj, TLRPC.Message newMsgObj) {
+        openAiService.switchClaude(UserConfig.getInstance(currentAccount).apiKeyClaude,
+                UserConfig.getInstance(currentAccount).apiServerClaude);
+
+        // 配置模型
+        ChatACompletionRequest completionRequest = ChatACompletionRequest.builder()
+                .temperature(temperature != -100 ? (temperature > 1.0 ? 1.0 : temperature) : null)
+                .maxTokens(tokenLimit != -100 ? tokenLimit : 4096)
+                .stream(false)
+                .model(aiModelReal)
+                .build();
+
+        // 配置聊天
+        List<ChatARequestMessage> contents
+                = getChatChatAMessageList(prompt, originalPath, isClaudeProVision, msgObj);
+
+        completionRequest.setMessages(contents);
+
+        BaseMessage baseMessage = new BaseMessage();
+        baseMessage.setDialog_id(newMsgObj.dialog_id);
+        KeepAliveJob.finishJob();
+
+
+        if (getUserConfig().streamResponses) {
+
+            streamMessages.clear();
+
+            String claudeId = "Claude_" + SystemClock.elapsedRealtime();
+
+
+            openAiService.streamChatACompletion(completionRequest, new OpenAiService.StreamACallBack() {
+                @Override
+                public void onSuccess(ChatACompletionChoice result) {
+
+                    final String streamId;
+
+                    streamId = claudeId;
+//                    if (TextUtils.isEmpty(result.getId())) {
+//                        streamId =  claudeId;
+//                    } else {
+//                        streamId = result.getId();
+//                    }
+
+                    if (TextUtils.isEmpty(streamId) || result.getType() == null)
+                        return;
+
+
+                    ChatAMessage completionChoice = result.getMessage();
+
+                    //MESSAGE_STOP代表输出停止 MESSAGE_DELTA代表停止后的结束信息 MESSAGE_STOP代表消息结束
+                    if (result.getType().equals(ChatAContentType.CONTENT_BLOCK_STOP.value()) ||
+                            result.getType().equals(ChatAContentType.MESSAGE_DELTA.value()) ||
+                            result.getType().equals(ChatAContentType.MESSAGE_STOP.value())
+                            ) {
+                        //发送结束空内容
+                        streamMessages.clear();
+                        return;
+                    }
+
+
+                    // 消息内容
+                    if(result.getType().equals(ChatAContentType.CONTENT_BLOCK_DELTA.value())) {
+                        if (!streamMessages.containsKey(streamId)) {
+                            //未找到，创建新消息
+                            TLRPC.TL_updateShortMessage message = new TLRPC.TL_updateShortMessage();
+                            message.chat_id = currentAccount;
+//                                message.date = result.getCreated() > 0 ? (int) result.getCreated()
+//                                        : (int) (System.currentTimeMillis() / 1000);
+                            message.date = (int) (System.currentTimeMillis() / 1000);
+
+                            if (completionChoice.getText() == null
+                                    || completionChoice.getText().isEmpty()) return;
+                            message.id = getUserConfig().getNewMessageId();
+                            message.message = completionChoice.getText();
+                            message.out = false;
+                            message.pts = getMessagesStorage().getLastPtsValue() + 1;
+                            message.pts_count = 1;
+                            message.silent = false;
+                            message.user_id = baseMessage.getDialog_id();
+
+                            TLRPC.Message temp = new TLRPC.Message();
+                            temp.id = message.id;
+                            temp.message = message.message;
+                            temp.out = message.out;
+                            temp.date = message.date;
+                            temp.dialog_id = message.user_id;
+
+                            streamMessages.put(streamId, temp);
+
+                            message.chat_air = true;
+
+                            //保存聊天id
+                            getUserConfig().saveConfig(false);
+
+                            //发送接收后，考虑改为已读状态
+                            AccountInstance.getInstance(currentAccount).getMessagesController()
+                                    .processUpdates(message, true);
+
+                        } else {
+                            //更新消息
+                            TLRPC.Message tempMessage = streamMessages.get(streamId);
+                            if (tempMessage == null) return;
+
+                            TLRPC.Message message = new TLRPC.TL_message();
+
+                            message.id = tempMessage.id;
+                            message.message = tempMessage.message + completionChoice.getText();
+                            message.out = tempMessage.out;
+                            message.silent = tempMessage.silent;
+                            message.dialog_id = tempMessage.dialog_id;
+
+                            tempMessage.message = message.message;
+                            streamMessages.put(streamId, tempMessage);
+
+                            MessageObject messageObject
+                                    = new MessageObject(currentAccount, message, true, true);
+
+                            //在onCompletion执行前，已经走完最后一条的下方执行
+                            AndroidUtilities.runOnUIThread(() -> {
+
+                                ArrayList<TLRPC.Message> messageList = new ArrayList<>();
+                                messageList.add(message);
+                                getNotificationCenter().postNotificationName(NotificationCenter.updateMessagesObjects,
+                                        messageObject.messageOwner.dialog_id, messageList);
+
+                            });
+
+                        }
+                    }
+                }
+
+                @Override
+                public void onError(AnthropicHttpException error, Throwable throwable) {
+
+                    AndroidUtilities.runOnUIThread(() -> {
+                        getNotificationCenter().postNotificationName(NotificationCenter.cancelRequest);
+                        setRequesting(false);
+                    });
+                    streamMessages.clear();
+
+                    String errorTx;
+                    if (error != null) {
+                        errorTx = error.getMessage();
+                    } else {
+                        errorTx = throwable.getMessage();
+                    }
+
+                    if (!TextUtils.isEmpty(errorTx)) {
+                        AndroidUtilities.runOnUIThread(() -> {
+                            getNotificationCenter().postNotificationName(NotificationCenter.showAlert,
+                                    AlertsCreator.TYPE_ALERT_ERROR, errorTx);
+                        });
+                    }
+                }
+
+                @Override
+                public void onCompletion() {
+                    AndroidUtilities.runOnUIThread(() -> {
+                        getNotificationCenter().postNotificationName(NotificationCenter.cancelRequest);
+                        setRequesting(false);
+                    });
+                    streamMessages.clear();
+                }
+
+                @Override
+                public void onLoading(boolean isLoading) {
+                    Utilities.stageQueue.postRunnable(() -> {
+
+                        //现在的loading是发送true，只要接受到消息，即使在继续接受也为false
+                        //后续UI逻辑改为继续接收true，接收完毕false
+                        if (isLoading) {
+                            setRequesting(true);
+                        }
+
+                        TLRPC.TL_updateShort updateShort = new TLRPC.TL_updateShort();
+                        updateShort.chat_id = currentAccount;
+                        //这里的时间是一个问题，如果接受消息采用服务器消息，服务器与本地时间不符合
+                        updateShort.date = (int) (System.currentTimeMillis() / 1000);
+
+                        TLRPC.TL_updateUserTyping message = new TLRPC.TL_updateUserTyping();
+
+                        if (isLoading) {
+                            message.action = new TLRPC.TL_sendMessageTypingAction();
+                        } else {
+                            message.action = new TLRPC.TL_sendMessageCancelAction();
+                        }
+                        message.user_id = baseMessage.getDialog_id();
+                        updateShort.update = message;
+
+                        AccountInstance.getInstance(currentAccount).getMessagesController().processUpdates(updateShort, false);
+
+                    });
+                }
+            });
+
+
+        } else {
+            openAiService.createChatACompletion(completionRequest,
+                    new OpenAiService.ResultACallBack() {
+                        @Override
+                        public void onSuccess(ChatACompletionResponse result) {
+
+                            for (ChatAMessage message : result.getContent()) {
+
+                                //任务服务暂停
+                                KeepAliveJob.finishJob();
+
+                                Utilities.stageQueue.postRunnable(() -> {
+
+                                    if (message != null && !message.getText().isEmpty()) {
+
+                                        String content;
+                                        long userId = baseMessage.getDialog_id();
+                                        long promptTokens = 0;
+                                        long completionTokens = 0;
+
+                                        content = message.getText();
+
+                                        // 现在只处理文字
+                                        processMessage(content, userId, promptTokens, completionTokens);
+
+                                    }
+
+                                });
+
+                            }
+
+                        }
+
+                        @Override
+                        public void onError(AnthropicHttpException error, Throwable throwable) {
+
+                            String errorTx;
+                            if (error != null) {
+                                errorTx = "code:" + error.code
+                                        + "\n" + "status:" + error.status
+                                        + "\n" + "message:" + getGeminiError(error.getMessage());
+                            } else {
+                                errorTx = throwable.getMessage();
+                            }
+
+                            if (!TextUtils.isEmpty(errorTx)) {
+                                AndroidUtilities.runOnUIThread(() -> {
+                                    getNotificationCenter().postNotificationName(NotificationCenter.showAlert,
+                                            AlertsCreator.TYPE_ALERT_ERROR, errorTx);
+                                });
+                            }
+                        }
+
+
+                        @Override
+                        public void onLoading(boolean isLoading) {
+
+                            isRequesting = isLoading;
+
+                            TLRPC.TL_updateShort updateShort = new TLRPC.TL_updateShort();
+                            updateShort.chat_id = currentAccount;
+                            updateShort.date = (int) (System.currentTimeMillis() / 1000);
+
+                            TLRPC.TL_updateUserTyping message = new TLRPC.TL_updateUserTyping();
+
+                            if (isLoading) {
+                                message.action = new TLRPC.TL_sendMessageTypingAction();
+                            } else {
+                                message.action = new TLRPC.TL_sendMessageCancelAction();
+                            }
+                            message.user_id = baseMessage.getDialog_id();
+                            updateShort.update = message;
+
+                            AccountInstance.getInstance(currentAccount).getMessagesController()
+                                    .processUpdates(updateShort, false);
+
+                        }
+                    });
+        }
     }
 
     private String getGeminiError(String errorMessage) {

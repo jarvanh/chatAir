@@ -14,6 +14,7 @@ import android.widget.TextView;
 import com.theokanning.openai.OpenAiHttpException;
 import com.theokanning.openai.OpenAiResponse;
 import com.theokanning.openai.model.Model;
+import com.theokanning.openai.service.LLMType;
 import com.theokanning.openai.service.OpenAiService;
 
 import org.telegram.messenger.AndroidUtilities;
@@ -64,7 +65,7 @@ public class ChangeApiKeyActivity extends BaseFragment {
 
         String token = UserConfig.getInstance(currentAccount).apiKey;
         String apiServer = UserConfig.getInstance(currentAccount).apiServer;
-        openAiService = new OpenAiService(token, 5, apiServer, false);
+        openAiService = new OpenAiService(token, 5, apiServer, LLMType.openAi);
 
         return super.onFragmentCreate();
     }
@@ -134,7 +135,7 @@ public class ChangeApiKeyActivity extends BaseFragment {
         TextView buttonTextView = new TextView(context);
 
         // todo 验证改为发送一条消息
-        buttonTextView.setVisibility(View.GONE);
+//        buttonTextView.setVisibility(View.GONE);
 
         buttonTextView.setPadding(AndroidUtilities.dp(34), 0, AndroidUtilities.dp(34), 0);
         buttonTextView.setGravity(Gravity.CENTER);
@@ -222,7 +223,7 @@ public class ChangeApiKeyActivity extends BaseFragment {
 
         if (TextUtils.isEmpty(newFirst) || checkValue(newFirst)) return;
 
-        openAiService.changeMatchToken(newFirst, UserConfig.getInstance(currentAccount).apiServer);
+        openAiService.changeLLMToken(newFirst, LLMType.openAi);
 
         isReq = true;
 
