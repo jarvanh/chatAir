@@ -257,10 +257,11 @@ public class LocaleController {
         addRules(new String[]{"shi"}, new PluralRules_Tachelhit());
         addRules(new String[]{"mt"}, new PluralRules_Maltese());
         addRules(new String[]{"zh","zh-tw","zh-hk","zh-sg"}, new PluralRules_One());
+        addRules(new String[]{"vi"}, new PluralRules_One());
         addRules(new String[]{"ga", "se", "sma", "smi", "smj", "smn", "sms"}, new PluralRules_Two());
         addRules(new String[]{"ak", "am", "bh", "fil", "tl", "guw", "hi", "ln", "mg", "nso", "ti", "wa"}, new PluralRules_Zero());
         addRules(new String[]{"az", "bm", "fa", "ig", "hu", "ja", "kde", "kea", "ko", "my", "ses", "sg", "to",
-                "tr", "vi", "wo", "yo", "bo", "dz", "id", "jv", "jw", "ka", "km", "kn", "ms", "th", "in"}, new PluralRules_None());
+                "tr", "wo", "yo", "bo", "dz", "id", "jv", "jw", "ka", "km", "kn", "ms", "th", "in"}, new PluralRules_None());
 
         LocaleInfo localeInfo = new LocaleInfo();
         localeInfo.name = "English";
@@ -337,6 +338,16 @@ public class LocaleController {
         localeInfo.nameEnglish = "Korean";
         localeInfo.nameChinese = "韩语";
         localeInfo.shortName = localeInfo.pluralLangCode = "ko";
+        localeInfo.pathToFile = null;
+        localeInfo.builtIn = true;
+        languages.add(localeInfo);
+        languagesDict.put(localeInfo.shortName, localeInfo);
+
+        localeInfo = new LocaleInfo();
+        localeInfo.name = "Tiếng Việt";
+        localeInfo.nameEnglish = "Vietnamese";
+        localeInfo.nameChinese = "越南语";
+        localeInfo.shortName = localeInfo.pluralLangCode = "vi";
         localeInfo.pathToFile = null;
         localeInfo.builtIn = true;
         languages.add(localeInfo);
