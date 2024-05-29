@@ -1299,12 +1299,14 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             if ((mask & MessagesController.UPDATE_MASK_API_KEY) != 0) {
                 // 更新普通apiKey
                 if (openAiService != null) {
+                    openAiService.resetTokenLLMType();
                     openAiService.changeMatchToken(UserConfig.getInstance(currentAccount).apiKey,
                             UserConfig.getInstance(currentAccount).apiServer);
                 }
             } else if ((mask & MessagesController.UPDATE_MASK_API_SERVER) != 0) {
                 // 更新普通aiService
                 if (openAiService != null) {
+                    openAiService.resetUrlLLMType();
                     openAiService.changeMatchServer(UserConfig.getInstance(currentAccount).apiServer,
                             UserConfig.getInstance(currentAccount).apiKey);
                 }
@@ -1312,6 +1314,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             } else if ((mask & MessagesController.UPDATE_MASK_GOOGLE_API_KEY) != 0) {
                 // 更新Google apiKey
                 if (openAiService != null) {
+                    openAiService.resetTokenLLMType();
                     openAiService.changeMatchTokenGoogle(UserConfig.getInstance(currentAccount).apiKeyGoogle,
                             UserConfig.getInstance(currentAccount).apiServerGoogle);
                 }
@@ -1319,8 +1322,24 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             } else if ((mask & MessagesController.UPDATE_MASK_GOOGLE_API_SERVER) != 0) {
                 // 更新普通Google aiService
                 if (openAiService != null) {
+                    openAiService.resetUrlLLMType();
                     openAiService.changeMatchServerGoogle(UserConfig.getInstance(currentAccount).apiServerGoogle,
                             UserConfig.getInstance(currentAccount).apiKeyGoogle);
+                }
+            } else if ((mask & MessagesController.UPDATE_MASK_CLAUDE_API_KEY) != 0) {
+                // 更新Google apiKey
+                if (openAiService != null) {
+                    openAiService.resetTokenLLMType();
+                    openAiService.changeMatchTokenClaude(UserConfig.getInstance(currentAccount).apiKeyClaude,
+                            UserConfig.getInstance(currentAccount).apiServerClaude);
+                }
+
+            } else if ((mask & MessagesController.UPDATE_MASK_CLAUDE_API_SERVER) != 0) {
+                // 更新普通Google aiService
+                if (openAiService != null) {
+                    openAiService.resetUrlLLMType();
+                    openAiService.changeMatchServerClaude(UserConfig.getInstance(currentAccount).apiServerClaude,
+                            UserConfig.getInstance(currentAccount).apiKeyClaude);
                 }
             }
         } else if (id == NotificationCenter.cancelRequest) {

@@ -181,8 +181,6 @@ public class OpenAiService {
         if (llmTypeToken != llmType) {
             changeLLMToken(token, llmType);
         }
-
-        changeLLMToken(token, llmType);
     }
 
     public void checkLLMServer(String url, LLMType llmType) {
@@ -260,6 +258,15 @@ public class OpenAiService {
         System.out.print("llmType:" + llmType
                 + "URL does not match token isUrl:" + llmTypeUrl  + "isToken:" + llmTypeToken);
         return LLMType.unKnow;
+    }
+
+    // 解决同类型Url修改，不生效的问题
+    public void resetUrlLLMType() {
+        llmTypeUrl = LLMType.unKnow;
+    }
+    // 解决同类型Token修改，不生效的问题
+    public void resetTokenLLMType() {
+        llmTypeToken = LLMType.unKnow;
     }
 
     /**
