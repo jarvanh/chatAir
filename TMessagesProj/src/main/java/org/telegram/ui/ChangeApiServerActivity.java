@@ -148,8 +148,8 @@ public class ChangeApiServerActivity extends BaseFragment {
 
         TextView buttonTextView = new TextView(context);
 
-        // todo 验证改为发送一条消息
-//        buttonTextView.setVisibility(View.GONE);
+        //因为服务器地址和密钥绑定，容易对用户造成混淆
+        buttonTextView.setVisibility(View.GONE);
 
         buttonTextView.setPadding(AndroidUtilities.dp(34), 0, AndroidUtilities.dp(34), 0);
         buttonTextView.setGravity(Gravity.CENTER);

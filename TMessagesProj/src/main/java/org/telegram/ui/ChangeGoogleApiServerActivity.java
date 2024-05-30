@@ -150,6 +150,9 @@ public class ChangeGoogleApiServerActivity extends BaseFragment {
 
         TextView buttonTextView = new TextView(context);
 
+        //因为服务器地址和密钥绑定，容易对用户造成混淆
+        buttonTextView.setVisibility(View.GONE);
+
         buttonTextView.setPadding(AndroidUtilities.dp(34), 0, AndroidUtilities.dp(34), 0);
         buttonTextView.setGravity(Gravity.CENTER);
         buttonTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
