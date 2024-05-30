@@ -574,6 +574,8 @@ public class UserConfig extends BaseController {
                 true));
         aiModelList.put(902, new AiModelBean("Claude 3 opus", "claude-3-opus-20240229",
                 true));
+        aiModelList.put(903, new AiModelBean("Claude 3 sonnet", "claude-3-sonnet-20240229",
+                true));
 
     }
 
