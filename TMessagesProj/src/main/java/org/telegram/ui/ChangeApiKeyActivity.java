@@ -11,9 +11,12 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.flyun.base.BaseMessage;
 import com.theokanning.openai.OpenAiHttpException;
-import com.theokanning.openai.OpenAiResponse;
-import com.theokanning.openai.model.Model;
+import com.theokanning.openai.completion.chat.ChatCompletionRequest;
+import com.theokanning.openai.completion.chat.ChatCompletionResult;
+import com.theokanning.openai.completion.chat.ChatMessage;
+import com.theokanning.openai.completion.chat.ChatMessageRole;
 import com.theokanning.openai.service.LLMType;
 import com.theokanning.openai.service.OpenAiService;
 
@@ -35,6 +38,7 @@ import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.LayoutHelper;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import okhttp3.internal.Util;
 
@@ -227,19 +231,29 @@ public class ChangeApiKeyActivity extends BaseFragment {
 
         isReq = true;
 
-        openAiService.baseCompletion(openAiService.listModels,
-                new OpenAiService.CompletionCallBack<OpenAiResponse<Model>>() {
-                    @Override
-                    public void onSuccess(Object o) {
-//                        OpenAiResponse<Model> openAiResponse = (OpenAiResponse<Model>) o;
+        List<ChatMessage> chatMessageList = new ArrayList<>();
+        ChatMessage sendChatMessage = new ChatMessage();
+        sendChatMessage.setRole(ChatMessageRole.USER.value());
 
+        sendChatMessage.setContent("hi");
+        chatMessageList.add(sendChatMessage);
+
+        ChatCompletionRequest chatCompletionRequest  = ChatCompletionRequest.builder()
+                .model("gpt-3.5-turbo")
+                .temperature(0.1)
+                .maxTokens(256)
+                .build().setMessages(chatMessageList);
+
+        openAiService.createChatCompletion(chatCompletionRequest, new BaseMessage(),
+                new OpenAiService.ResultCallBack() {
+                    @Override
+                    public void onSuccess(ChatCompletionResult result) {
                         AndroidUtilities.runOnUIThread(() -> {
                             isReq = false;
 
                             AlertsCreator.showSimpleAlert(ChangeApiKeyActivity.this,
                                     LocaleController.getString("ValidateSuccess", R.string.ValidateSuccess));
                         });
-
                     }
 
                     @Override
@@ -255,6 +269,11 @@ public class ChangeApiKeyActivity extends BaseFragment {
 
                             AlertsCreator.processError(errorTx, ChangeApiKeyActivity.this);
                         });
+                    }
+
+                    @Override
+                    public void onLoading(boolean isLoading) {
+
                     }
                 });
     }

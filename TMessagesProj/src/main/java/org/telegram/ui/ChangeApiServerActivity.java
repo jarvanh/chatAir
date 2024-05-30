@@ -11,9 +11,12 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.flyun.base.BaseMessage;
 import com.theokanning.openai.OpenAiHttpException;
-import com.theokanning.openai.OpenAiResponse;
-import com.theokanning.openai.model.Model;
+import com.theokanning.openai.completion.chat.ChatCompletionRequest;
+import com.theokanning.openai.completion.chat.ChatCompletionResult;
+import com.theokanning.openai.completion.chat.ChatMessage;
+import com.theokanning.openai.completion.chat.ChatMessageRole;
 import com.theokanning.openai.service.LLMType;
 import com.theokanning.openai.service.OpenAiService;
 
@@ -33,6 +36,7 @@ import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.LayoutHelper;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by flyun on 2023/7/15.
@@ -226,8 +230,6 @@ public class ChangeApiServerActivity extends BaseFragment {
             newFirst = UserConfig.getInstance(currentAccount).apiServer;
 
         }
-        isReq = true;
-
         if (TextUtils.isEmpty(newFirst)) return;
 
         String formatUrl = formatUrl(newFirst);
@@ -243,21 +245,33 @@ public class ChangeApiServerActivity extends BaseFragment {
             firstNameField.setSelection(formatUrl.length());
         }
 
+        isReq = true;
+
         openAiService.changeLLMServer(newFirst, LLMType.openAi);
 
-        openAiService.baseCompletion(openAiService.listModels,
-                new OpenAiService.CompletionCallBack<OpenAiResponse<Model>>() {
-                    @Override
-                    public void onSuccess(Object o) {
-//                        OpenAiResponse<Model> openAiResponse = (OpenAiResponse<Model>) o;
+        List<ChatMessage> chatMessageList = new ArrayList<>();
+        ChatMessage sendChatMessage = new ChatMessage();
+        sendChatMessage.setRole(ChatMessageRole.USER.value());
 
+        sendChatMessage.setContent("hi");
+        chatMessageList.add(sendChatMessage);
+
+        ChatCompletionRequest chatCompletionRequest  = ChatCompletionRequest.builder()
+                .model("gpt-3.5-turbo")
+                .temperature(0.1)
+                .maxTokens(256)
+                .build().setMessages(chatMessageList);
+
+        openAiService.createChatCompletion(chatCompletionRequest, new BaseMessage(),
+                new OpenAiService.ResultCallBack() {
+                    @Override
+                    public void onSuccess(ChatCompletionResult result) {
                         AndroidUtilities.runOnUIThread(() -> {
                             isReq = false;
 
                             AlertsCreator.showSimpleAlert(ChangeApiServerActivity.this,
                                     LocaleController.getString("ValidateSuccess", R.string.ValidateSuccess));
                         });
-
                     }
 
                     @Override
@@ -273,6 +287,11 @@ public class ChangeApiServerActivity extends BaseFragment {
 
                             AlertsCreator.processError(errorTx, ChangeApiServerActivity.this);
                         });
+                    }
+
+                    @Override
+                    public void onLoading(boolean isLoading) {
+
                     }
                 });
     }
