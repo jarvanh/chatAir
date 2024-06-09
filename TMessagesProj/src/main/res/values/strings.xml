@@ -3574,7 +3574,7 @@
     <string name="FindKey">Find API key</string>
     <string name="FindKeyUrl">https://platform.openai.com/account/api-keys</string>
     <string name="FindGoogleKeyUrl">https://makersuite.google.com/app/apikey</string>
-    <string name="FindClaudeKeyUrl">https://console.anthropic.com</string>
+    <string name="FindClaudeKeyUrl">https://console.anthropic.com/account/keys</string>
     <string name="ChangeApiServer">API Server</string>
     <string name="DefaultApiServe">API server reset to default</string>
     <string name="MalformedUrl">Malformed url</string>
