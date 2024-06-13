@@ -2,13 +2,13 @@
 <p align="left">
   <a align="center" href="https://miaoyan.app/" target="_blank"><img src=https://github.com/flyun/chatAir/blob/chatair/TMessagesProj/src/main/ic_launcher-playstore.png width=138 /></a>
   <h1 align="left">ChatAir</h1>
-  <div align="left">ChatAir is a native client for OpenAI, Gemini, and Claude</div>
+  <div align="left">ChatAir is a native Android app for ChatGPT, Gemini, and Claude</div>
 </p>
 
 
 ## ChatAir for Android
 
-ChatAir is a native client for OpenAI, Gemini, and Claude, providing a smoother and faster chat experience than ChatGPT.
+ChatAir is a native Android app for ChatGPT, Gemini, and Claude, providing a smoother and faster chat experience than ChatGPT.
 
 <div align="left">
 <img src = "https://github.com/flyun/chatAir/blob/chatair/ScreenShots/01.png" width ="260" />

@@ -2,13 +2,13 @@
 <p align="left">
   <a align="center" href="https://miaoyan.app/" target="_blank"><img src=https://github.com/flyun/chatAir/blob/chatair/TMessagesProj/src/main/ic_launcher-playstore.png width=138 /></a>
   <h1 align="left">ChatAir</h1>
-  <div align="left">ChatAir 是 OpenAI、Gemini 和 Claude 的原生客户端</div>
+  <div align="left">ChatAir 是 ChatGPT、Gemini 和 Claude 的原生Android应用程序</div>
 </p>
 
 
 ## Android 版 ChatAir
 
-ChatAir 是 OpenAI、Gemini 和 Claude 的原生客户端，提供比 ChatGPT 更流畅、更快速的聊天体验。
+ChatAir 是 ChatGPT、Gemini 和 Claude 的原生Android应用程序，提供比 ChatGPT 更流畅、更快速的聊天体验。
 
 <div align="left">
 <img src = "https://github.com/flyun/chatAir/blob/chatair/ScreenShots/01.png" width ="260" />
