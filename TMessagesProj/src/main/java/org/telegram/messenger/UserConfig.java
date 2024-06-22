@@ -576,6 +576,8 @@ public class UserConfig extends BaseController {
                 true));
         aiModelList.put(903, new AiModelBean("Claude 3 sonnet", "claude-3-sonnet-20240229",
                 true));
+        aiModelList.put(904, new AiModelBean("Claude 3.5 sonnet", "claude-3-5-sonnet-20240620",
+                true));
 
     }
 
@@ -740,6 +742,8 @@ public class UserConfig extends BaseController {
 
         if (aiModel == 901) return true;
         if (aiModel == 902) return true;
+        if (aiModel == 903) return true;
+        if (aiModel == 904) return true;
 
         return false;
     }
