@@ -204,6 +204,8 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
     private int autoHideKeyboardRow;
     private int switchSubtitleContentRow;
 
+    private int switchHideToolbarRow;
+
     private int rowCount;
 
     private boolean updatingLocation;
@@ -561,6 +563,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
         renderMarkdownRow = -1;
         autoHideKeyboardRow = -1;
         switchSubtitleContentRow = -1;
+        switchHideToolbarRow = -1;
 
         appIconHeaderRow = -1;
         appIconSelectorRow = -1;
@@ -695,6 +698,8 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                 autoHideKeyboardRow = rowCount++;
                 // 副标题内容切换
                 switchSubtitleContentRow = rowCount++;
+                // 隐藏标题栏
+//                switchHideToolbarRow = rowCount++;
             }
 
             settings2Row = rowCount++;
@@ -1231,6 +1236,15 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
 
                 if (view instanceof TextCheckCell) {
                     ((TextCheckCell) view).setChecked(getUserConfig().switchSubtitleContent);
+                }
+            } else if (position == switchHideToolbarRow) {
+                boolean isHideToolbar = getUserConfig().isHideToolbar;
+
+                getUserConfig().isHideToolbar = !isHideToolbar;
+                getUserConfig().saveConfig(false);
+
+                if (view instanceof TextCheckCell) {
+                    ((TextCheckCell) view).setChecked(getUserConfig().isHideToolbar);
                 }
             } else if (position == directShareRow) {
                 SharedConfig.toggleDirectShare();
@@ -2365,6 +2379,8 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                         textCheckCell.setTextAndValueAndCheck(LocaleController.getString("AutoHideKeyboard", R.string.AutoHideKeyboard), LocaleController.getString("AutoHideKeyboardInfo", R.string.AutoHideKeyboardInfo), getUserConfig().autoHideKeyboard, false, true);
                     } else if (position == switchSubtitleContentRow) {
                         textCheckCell.setTextAndValueAndCheck(LocaleController.getString("SwitchSubtitleContent", R.string.SwitchSubtitleContent), LocaleController.getString("SwitchSubtitleContentTips", R.string.SwitchSubtitleContentTips), getUserConfig().switchSubtitleContent, false, false);
+                    } else if (position == switchHideToolbarRow) {
+                        textCheckCell.setTextAndCheck(LocaleController.getString("HideToolbar", R.string.HideToolbar), getUserConfig().isHideToolbar, false);
                     } else if (position == directShareRow) {
                         textCheckCell.setTextAndValueAndCheck(LocaleController.getString("DirectShare", R.string.DirectShare), LocaleController.getString("DirectShareInfo", R.string.DirectShareInfo), SharedConfig.directShare, false, true);
                     } else if (position == chatBlurRow) {
@@ -2487,7 +2503,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                     position == raiseToSpeakRow || position == pauseOnRecordRow || position == customTabsRow ||
                     position == directShareRow || position == chatBlurRow || position == streamResponsesRow ||
                     position == renderMarkdownRow || position == autoHideKeyboardRow ||
-                    position == switchSubtitleContentRow) {
+                    position == switchSubtitleContentRow || position == switchHideToolbarRow) {
                 return TYPE_TEXT_CHECK;
             } else if (position == textSizeRow) {
                 return TYPE_TEXT_SIZE;

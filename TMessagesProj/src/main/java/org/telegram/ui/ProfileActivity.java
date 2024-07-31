@@ -3516,10 +3516,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
             } else if (position == contextRow) {
 
-                if (UserConfig.isUserVision(currentAccount, userId)) {
-                    return;
-                }
-
                 //todo 优化：通过操作messageList插入删除contextClear来加入提示，注意删除、发送，检查列表的情况
                 AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
                 builder.setTitle(LocaleController.getString("ContextTitle", R.string.ContextTitle));
@@ -7944,9 +7940,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 isOnline[0] = false;
                 if (BuildVars.IS_CHAT_AIR) {
                     int contextLimit;
-                    if (UserConfig.isUserVision(currentAccount, user)) {
-                        contextLimit = UserConfig.defaultContextLimitGeminiProVision;
-                    } else if ((user.flags2 & MessagesController.UPDATE_MASK_CHAT_AIR_AI_CONTEXT_LIMIT) != 0) {
+                    if ((user.flags2 & MessagesController.UPDATE_MASK_CHAT_AIR_AI_CONTEXT_LIMIT) != 0) {
                         contextLimit = user.contextLimit;
                     } else {
                         contextLimit = UserConfig.getInstance(currentAccount).contextLimit;
@@ -9726,9 +9720,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         selectText = LocaleController.getString("ContextTitle", R.string.ContextTitle);
                         TLRPC.User user = getMessagesController().getUser(userId);
 
-                        if (UserConfig.isUserVision(currentAccount, user)) {
-                            selectValue = Integer.toString(UserConfig.defaultContextLimitGeminiProVision);
-                        } else if ((user.flags2 & MessagesController.UPDATE_MASK_CHAT_AIR_AI_CONTEXT_LIMIT) != 0) {
+                        if ((user.flags2 & MessagesController.UPDATE_MASK_CHAT_AIR_AI_CONTEXT_LIMIT) != 0) {
                             selectValue = Integer.toString(user.contextLimit);
                         } else {
                             selectValue = Integer.toString(UserConfig.getInstance(currentAccount).contextLimit);

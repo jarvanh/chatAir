@@ -22,6 +22,7 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
+import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextDetailCell;
 import org.telegram.ui.Cells.TextDetailSettingsCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
@@ -60,6 +61,17 @@ public class AiParametersActivity extends BaseFragment implements NotificationCe
     private int defaultRow;
     private int defaultSectionRow;
 
+    private int openAiHeaderRow;
+    private int openOldAgreementAiRow;
+    private int openAiSectionRow;
+
+    private int geminiHeaderRow;
+    private int geminiSafeRow;
+    private int geminiSectionRow;
+
+
+    private int oldAgreementRow;
+
     private int rowCount = 0;
 
     private int lastModel;
@@ -92,6 +104,14 @@ public class AiParametersActivity extends BaseFragment implements NotificationCe
         defaultHeaderRow = rowCount++;
         defaultRow = rowCount++;
         defaultSectionRow = rowCount++;
+
+        openAiHeaderRow = rowCount++;
+        openOldAgreementAiRow = rowCount++;
+        openAiSectionRow = rowCount++;
+
+//        geminiHeaderRow = rowCount++;
+//        geminiSafeRow = rowCount++;
+//        geminiSectionRow = rowCount++;
 
         if (notify && adapter != null) {
             adapter.notifyDataSetChanged();
@@ -275,11 +295,7 @@ public class AiParametersActivity extends BaseFragment implements NotificationCe
 
             } else if (position == contextRow) {
 
-                if (UserConfig.getInstance(currentAccount).isDefaultVision()) {
-                    return;
-                }
 
-                //todo 优化：通过操作messageList插入删除contextClear来加入提示，注意删除、发送，检查列表的情况
                 AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
                 builder.setTitle(LocaleController.getString("ContextTitle", R.string.ContextTitle));
 
@@ -400,6 +416,24 @@ public class AiParametersActivity extends BaseFragment implements NotificationCe
                 if (button != null) {
                     button.setTextColor(Theme.getColor(Theme.key_dialogTextRed));
                 }
+            } else if (position == openOldAgreementAiRow) {
+                boolean isOldAgreement = getUserConfig().isOldAgreement;
+
+                getUserConfig().isOldAgreement = !isOldAgreement;
+                getUserConfig().saveConfig(false);
+
+                if (view instanceof TextCheckCell) {
+                    ((TextCheckCell) view).setChecked(getUserConfig().isOldAgreement);
+                }
+            } else if (position == geminiSafeRow) {
+                boolean isGeminiSafe = getUserConfig().isGeminiSafe;
+
+                getUserConfig().isGeminiSafe = !isGeminiSafe;
+                getUserConfig().saveConfig(false);
+
+                if (view instanceof TextCheckCell) {
+                    ((TextCheckCell) view).setChecked(getUserConfig().isGeminiSafe);
+                }
             }
 
             AndroidUtilities.logEvent("aiParamItemClick", String.valueOf(position));
@@ -435,7 +469,8 @@ public class AiParametersActivity extends BaseFragment implements NotificationCe
                 VIEW_TYPE_SELECT = 2,
                 VIEW_TYPE_DETAIL_TIPS = 3,
                 VIEW_TYPE_SHADOW = 4,
-                VIEW_TYPE_TEXT_DETAIL = 5;
+                VIEW_TYPE_TEXT_DETAIL = 5,
+                TYPE_TEXT_CHECK = 6;
 
         public ListAdapter(Context context) {
             mContext = context;
@@ -474,6 +509,10 @@ public class AiParametersActivity extends BaseFragment implements NotificationCe
                     view = new TextDetailSettingsCell(mContext);
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
+                case TYPE_TEXT_CHECK:
+                    view = new TextCheckCell(mContext);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
                 default: {
                     view = new TextInfoPrivacyCell(mContext);
                     break;
@@ -493,6 +532,10 @@ public class AiParametersActivity extends BaseFragment implements NotificationCe
                         headerCell.setText(LocaleController.getString("GlobalAiParametersHeader", R.string.GlobalAiParametersHeader));
                     } else if (position == defaultHeaderRow) {
                         headerCell.setText(LocaleController.getString("Reset", R.string.Reset));
+                    } else if (position == openAiHeaderRow) {
+                        headerCell.setText(LocaleController.getString("OpenAI", R.string.OpenAI));
+                    } else if (position == geminiHeaderRow) {
+                        headerCell.setText(LocaleController.getString("Gemini", R.string.Gemini));
                     }
                     break;
                 }
@@ -522,11 +565,7 @@ public class AiParametersActivity extends BaseFragment implements NotificationCe
                         selectValue = Double.toString(UserConfig.getInstance(currentAccount).temperature);
                     } else if (position == contextRow){
                         selectText = LocaleController.getString("ContextTitle", R.string.ContextTitle);
-                        if (!UserConfig.getInstance(currentAccount).isDefaultVision()) {
-                            selectValue = Integer.toString(UserConfig.getInstance(currentAccount).contextLimit);
-                        } else {
-                            selectValue = Integer.toString(UserConfig.defaultContextLimitGeminiProVision);
-                        }
+                        selectValue = Integer.toString(UserConfig.getInstance(currentAccount).contextLimit);
                     } else if (position == tokenLimitRow){
                         selectText = LocaleController.getString("TokenLimitTitle", R.string.TokenLimitTitle);
                         int tokenLimit = UserConfig.getInstance(currentAccount).tokenLimit;
@@ -577,12 +616,30 @@ public class AiParametersActivity extends BaseFragment implements NotificationCe
                                 LocaleController.getString("ResetAllAiParametersTips", R.string.ResetAllAiParametersTips), false);
                     }
                     break;
+
+                case TYPE_TEXT_CHECK:
+                    TextCheckCell textCheckCell = (TextCheckCell) holder.itemView;
+                    if(position == geminiSafeRow) {
+                        textCheckCell.setTextAndValueAndCheck(LocaleController
+                                .getString("GeminiSafeParametersTips",
+                                        R.string.GeminiSafeParametersTips),
+                                LocaleController.getString("GeminiAiSafeParametersText",
+                                        R.string.GeminiAiSafeParametersText),
+                                getUserConfig().isGeminiSafe, false, false);
+
+                    } else if(position == openOldAgreementAiRow) {
+                        textCheckCell.setTextAndValueAndCheck(LocaleController.getString("OpenAiOldAgreementParametersTips", R.string.OpenAiOldAgreementParametersTips),
+                                LocaleController.getString("OpenAiOldAgreementAiParametersText", R.string.OpenAiOldAgreementAiParametersText),
+                                getUserConfig().isOldAgreement, false, false);
+                    }
+                    break;
             }
         }
 
         @Override
         public int getItemViewType(int position) {
-            if (position == aiParametersHeaderRow || position == defaultHeaderRow) {
+            if (position == aiParametersHeaderRow || position == defaultHeaderRow ||
+                    position == openAiHeaderRow || position == geminiHeaderRow) {
                 return VIEW_TYPE_HEADER;
             } else if (position == aiModelRow || position == temperatureRow ||
                     position == contextRow || position == tokenLimitRow ||
@@ -592,10 +649,13 @@ public class AiParametersActivity extends BaseFragment implements NotificationCe
                     position == temperatureTipsRow || position == contextTipsRow ||
                     position == tokenLimitTipsRow){
                 return VIEW_TYPE_DETAIL_TIPS;
-            } else if (position == defaultSectionRow){
+            } else if (position == defaultSectionRow || position == openAiSectionRow  ||
+                    position == geminiSectionRow){
                 return VIEW_TYPE_SHADOW;
             } else if (position == defaultRow){
                 return VIEW_TYPE_TEXT_DETAIL;
+            } else if (position == geminiSafeRow || position == openOldAgreementAiRow){
+                return TYPE_TEXT_CHECK;
             } else {
                 return 0;
             }

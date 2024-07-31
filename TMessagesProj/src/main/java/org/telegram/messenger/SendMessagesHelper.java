@@ -77,7 +77,6 @@ import com.theokanning.openai.service.OpenAiService;
 import org.json.JSONObject;
 import org.telegram.messenger.audioinfo.AudioInfo;
 import org.telegram.messenger.support.SparseLongArray;
-import org.telegram.messenger.utils.BitmapsCache;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.NativeByteBuffer;
 import org.telegram.tgnet.RequestDelegate;
@@ -522,6 +521,11 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     private static class MediaSendPrepareWorker {
         public volatile TLRPC.TL_photo photo;
         public volatile String parentObject;
+        public CountDownLatch sync;
+    }
+
+    private static class MediaSendAttachWorker {
+        public volatile String encodePhoto;
         public CountDownLatch sync;
     }
 
@@ -3467,10 +3471,79 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     public void sendMessage(String message, ArrayList<TLRPC.Message> messages, long peer, MessageObject replyToMsg, MessageObject replyToTopMsg, TLRPC.WebPage webPage, boolean searchLinks, ArrayList<TLRPC.MessageEntity> entities, TLRPC.ReplyMarkup replyMarkup, HashMap<String, String> params, boolean notify, int scheduleDate, MessageObject.SendAnimationData sendAnimationData, boolean updateStickersOrder) {
         if (contextMessages != null) {
             contextMessages.clear();
-            if (messages != null) contextMessages.addAll(messages);
-        }
+            boolean isHasMedia = false;
 
-        sendMessage(message, null, null, null, null, null, null, null, null, null, peer, null, replyToMsg, replyToTopMsg, webPage, searchLinks, null, entities, replyMarkup, params, notify, scheduleDate, 0, null, sendAnimationData, updateStickersOrder);
+            if (messages != null) {
+                for (TLRPC.Message bean : messages) {
+                    if (bean.media != null) {
+                        isHasMedia = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!isHasMedia) {
+                // 上下文没有图片以及其他需要耗时的操作，直接发送
+                sendMessage(message, null, null, null, null, null, null, null, null, null, peer, null, replyToMsg, replyToTopMsg, webPage, searchLinks, null, entities, replyMarkup, params, notify, scheduleDate, 0, null, sendAnimationData, updateStickersOrder);
+                return;
+            }
+            mediaSendQueue.postRunnable(() -> {
+                long beginTime = System.currentTimeMillis();
+                HashMap<TLRPC.MessageMedia, MediaSendAttachWorker> workers = new HashMap<>();
+
+                for (TLRPC.Message bean: messages) {
+                    if (bean.media == null) continue;
+                    final MediaSendAttachWorker worker = new MediaSendAttachWorker();
+                    workers.put(bean.media, worker);
+
+                    worker.sync = new CountDownLatch(1);
+                    if (bean.params != null && bean.params.get(UserConfig.IMAGE_TRANSCODE) != null) {
+                        worker.encodePhoto = bean.params.get(UserConfig.IMAGE_TRANSCODE);
+                    } else {
+                        mediaSendThreadPool.execute(() -> {
+                            if (bean.media.photo instanceof TLRPC.TL_photo) {
+                                worker.encodePhoto = ImageLoader
+                                        .getBase64Image((TLRPC.TL_photo) bean.media.photo,
+                                        getAccountInstance());
+                            } else {
+                                workers.remove(bean.media);
+                            }
+
+                            worker.sync.countDown();
+                        });
+                    }
+                }
+
+                for (TLRPC.Message bean: messages) {
+                    final MediaSendAttachWorker worker = workers.get(bean.media);
+
+                    if (worker == null) continue;
+                    String encodePhoto = worker.encodePhoto;
+
+                    if (encodePhoto == null) {
+                        try {
+                            worker.sync.await();
+                        }catch (Exception e) {
+                            FileLog.e(e);
+                        }
+                        if (bean.params == null) bean.params = new HashMap<>();
+                        bean.params.put(UserConfig.IMAGE_TRANSCODE, worker.encodePhoto);
+                    } else {
+                        if (bean.params == null) bean.params = new HashMap<>();
+                        bean.params.put(UserConfig.IMAGE_TRANSCODE, encodePhoto);
+                    }
+                }
+
+
+                workers.clear();
+//                workers = null;
+                AndroidUtilities.runOnUIThread(() -> {
+
+                    contextMessages.addAll(messages);
+                    sendMessage(message, null, null, null, null, null, null, null, null, null, peer, null, replyToMsg, replyToTopMsg, webPage, searchLinks, null, entities, replyMarkup, params, notify, scheduleDate, 0, null, sendAnimationData, updateStickersOrder);
+                                    });
+            });
+        }
     }
 
     public void sendMessage(TLRPC.MessageMedia location, long peer, MessageObject replyToMsg, MessageObject replyToTopMsg, TLRPC.ReplyMarkup replyMarkup, HashMap<String, String> params, boolean notify, int scheduleDate) {
@@ -3509,11 +3582,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         }
         if (message == null && caption == null) {
             caption = "";
-        }
-
-        // 图片不为空则为单图发送
-        if (BuildVars.IS_CHAT_AIR && contextMessages != null && photo != null) {
-            contextMessages.clear();
         }
 
         String originalPath = null;
@@ -5861,14 +5929,17 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
                 ChatCompletionRequest chatCompletionRequest;
 
+                // todo 旧协议兼容
                 // 发送请求格式切换，多模态请求，以及旧模态请求（只能发送文本）
-                if (isMultiCompletionRequest(aiModelReal, isOpenAIVision)) {
+//                if (isMultiCompletionRequest(aiModelReal, isOpenAIVision)) {
+                if (UserConfig.isSupportImageModel(currentAccount, user.id)) {
                     List<ChatMultiMessage> chatMessageList = getChatMultiCompletionRequest(prompt, msgObj);
+//                    if (true) return;
 
                     chatCompletionRequest = ChatCompletionRequest.builder()
                             .model(aiModelReal)
                             .temperature(temperature != -100 ? temperature : null)
-                            // todo gpt-4-vision-preview如果不配置maxTokens，则会按照最短的maxTokens配置。
+                            // gpt-4-vision-preview如果不配置maxTokens，则会按照最短的maxTokens配置。
                             //  导致输出文字过短，而图片模型无法进行多轮会话导致无法发送继续，输出更多内容。
                             .maxTokens(tokenLimit != -100 ? tokenLimit : 4096)
                             .build().setMessages(chatMessageList);
@@ -6501,34 +6572,55 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     : ChatMessageRole.ASSISTANT.value());
 
             List<ChatContent> contents = new ArrayList<>();
-            chatMessage.setContentText(contents, message.message);
+
+            if (message.params != null &&  message.params.containsKey(UserConfig.IMAGE_TRANSCODE)) {
+                // 图片
+                String photoEncode = message.params.remove(UserConfig.IMAGE_TRANSCODE);
+
+                if (photoEncode != null && !photoEncode.isEmpty()) {
+                    chatMessage.setContentImg(contents, photoEncode);
+                }
+
+            }
+
+            // 文字
+            if(!TextUtils.isEmpty(message.message)) {
+                chatMessage.setContentText(contents, message.message);
+            }
+
             chatMessageList.add(chatMessage);
         }
 
         //添加系统prompt
-//        if (!TextUtils.isEmpty(prompt)) {
-//            ChatMultiMessage systemMessage = new ChatMultiMessage();
-//            systemMessage.setRole(ChatMessageRole.SYSTEM.value());
-//
-//            List<ChatContent> contents = new ArrayList<>();
-//            systemMessage.setContentText(contents, prompt);
-//            chatMessageList.add(0, systemMessage);
-//        }
+        if (!TextUtils.isEmpty(prompt)) {
+            ChatMultiMessage systemMessage = new ChatMultiMessage();
+            systemMessage.setRole(ChatMessageRole.SYSTEM.value());
+
+            List<ChatContent> contents = new ArrayList<>();
+            systemMessage.setContentText(contents, prompt);
+            chatMessageList.add(0, systemMessage);
+        }
 
         //添加需要发送的内容
         ChatMultiMessage sendChatMessage = new ChatMultiMessage();
         sendChatMessage.setRole(ChatMessageRole.USER.value());
 
         List<ChatContent> contents = new ArrayList<>();
-        sendChatMessage.setContentText(contents, msgObj.messageOwner.message);
+        if(!TextUtils.isEmpty(msgObj.messageOwner.message)) {
+            sendChatMessage.setContentText(contents, msgObj.messageOwner.message);
+        }
 
         String base64 = "";
         if (msgObj.messageOwner != null && msgObj.messageOwner.params != null)
-            base64 = msgObj.messageOwner.params.remove("base64");
+            base64 = msgObj.messageOwner.params.remove(UserConfig.IMAGE_TRANSCODE);
 
-        sendChatMessage.setContentImg(contents, base64);
+        if(!TextUtils.isEmpty(base64)) {
+            sendChatMessage.setContentImg(contents, base64);
+        }
 
-        chatMessageList.add(sendChatMessage);
+        if (sendChatMessage.getContent() != null && sendChatMessage.getContent().size() > 0) {
+            chatMessageList.add(sendChatMessage);
+        }
 
         return chatMessageList;
 
@@ -6599,7 +6691,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         List<ChatGMessage> chatGMessageList = new ArrayList<>();
 
         //添加系统prompt，仅文本模式
-        if (!TextUtils.isEmpty(prompt) && !isGeminiProVision) {
+        if (!TextUtils.isEmpty(prompt)) {
             ChatGMessage systemMessage = new ChatGMessage();
             systemMessage.setRole(ChatGMessageRole.USER.value());
 
@@ -6628,16 +6720,36 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             ChatGMessage chatMessage = new ChatGMessage();
             TLRPC.Message message = contextMessages.get(i);
 
+            // todo 添加一问一答检测
             chatMessage.setRole(message.out ? ChatGMessageRole.USER.value()
                     : ChatGMessageRole.MODEL.value());
 
             List<ChatGMessagePart> parts = new ArrayList<>();
 
-            // 添加文本
-            ChatGMessagePart part = ChatGMessagePart.builder().text(message.message).build();
+            // 添加图片
+            if (message.params != null
+                    && message.params.containsKey(UserConfig.IMAGE_TRANSCODE)) {
+                String photoEncode = message.params.remove(UserConfig.IMAGE_TRANSCODE);
 
-            parts.add(part);
-            // todo 添加历史图片
+                if (photoEncode != null && !photoEncode.isEmpty()) {
+                    ChatGMessagePart imgPart
+                            = ChatGMessagePart.builder()
+                            .inline_data(
+                                    ChatGMessagePartInnerData.builder()
+                                            .data(photoEncode)
+                                            .mime_type("image/png")
+                                            .build()
+                            ).build();
+
+                    parts.add(imgPart);
+                }
+            }
+
+            // 添加文字
+            if(!TextUtils.isEmpty(message.message)) {
+                ChatGMessagePart part = ChatGMessagePart.builder().text(message.message).build();
+                parts.add(part);
+            }
 
             chatMessage.setParts(parts);
             chatGMessageList.add(chatMessage);
@@ -6649,27 +6761,23 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
         List<ChatGMessagePart> parts = new ArrayList<>();
 
+        // 添加图片
+        if (msgObj.messageOwner.params != null
+                && msgObj.messageOwner.params.containsKey(UserConfig.IMAGE_TRANSCODE)) {
+            String photoEncode = msgObj.messageOwner.params.remove(UserConfig.IMAGE_TRANSCODE);
 
-        String imgPath = msgObj.messageOwner.attachPath;
-//        String imgPath = msgObj.messageOwner.params;
+            if (photoEncode != null && !photoEncode.isEmpty()) {
+                ChatGMessagePart imgPart
+                        = ChatGMessagePart.builder()
+                        .inline_data(
+                                ChatGMessagePartInnerData.builder()
+                                        .data(photoEncode)
+                                        .mime_type("image/png")
+                                        .build()
+                        ).build();
 
-        // 添加图片 仅图片模式
-        if (!TextUtils.isEmpty(imgPath)) {
-
-            String imgBase64 = "";
-            if (msgObj.messageOwner != null && msgObj.messageOwner.params != null)
-                imgBase64 = msgObj.messageOwner.params.remove("base64");
-
-            ChatGMessagePart imgPart
-                    = ChatGMessagePart.builder()
-                    .inline_data(
-                            ChatGMessagePartInnerData.builder()
-                            .data(imgBase64)
-                            .mime_type("image/png")
-                            .build()
-                    ).build();
-
-            parts.add(imgPart);
+                parts.add(imgPart);
+            }
         }
 
         // 添加文本
@@ -8915,6 +9023,136 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         return bmOptions.outWidth < 800 && bmOptions.outHeight < 800;
     }
 
+    // 处理上下文
+    public ArrayList<TLRPC.Message> handleContextMessage(ArrayList<MessageObject> messages,
+                                                         long dialog_id) {
+        ArrayList<TLRPC.Message> messageOwners = new ArrayList<>();
+        TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialog_id);
+
+        if (user == null || messages == null) return messageOwners;
+
+        int contextLimit;
+        if ((user.flags2 & MessagesController.UPDATE_MASK_CHAT_AIR_AI_CONTEXT_LIMIT) != 0
+                && user.contextLimit != -1) {
+            contextLimit = user.contextLimit;
+        } else {
+            //全局默认配置
+            contextLimit = UserConfig.getInstance(currentAccount).contextLimit;
+        }
+
+        int i = 0;
+        for (MessageObject messageObject : messages) {
+            //聊天类型以及其他特殊事件类型
+            if (messageObject.type == 10 && messageObject.messageOwner.action
+                    instanceof TLRPC.TL_messageActionClearContext) {
+                break;
+            }
+
+            if (messageObject.type == 0 || messageObject.type == 1) {
+                i++;
+                if (i > contextLimit) break;
+                messageOwners.add(messageObject.messageOwner);
+            }
+        }
+
+        return messageOwners;
+    }
+
+    @UiThread
+    public void prepareSendingMedia(AccountInstance accountInstance,
+                                           ArrayList<MessageObject> messageObjects,
+                                           ArrayList<SendingMediaInfo> media,
+                                           long dialogId, MessageObject replyToMsg,
+                                           MessageObject replyToTopMsg,
+                                           InputContentInfoCompat inputContent,
+                                           boolean forceDocument, boolean groupMedia,
+                                           MessageObject editingMessageObject, boolean notify,
+                                           int scheduleDate, boolean updateStikcersOrder) {
+
+        contextMessages.clear();
+        boolean isHasMedia = false;
+
+        ArrayList<TLRPC.Message> messages
+                = SendMessagesHelper.getInstance(currentAccount)
+                .handleContextMessage(messageObjects, dialogId);
+
+        if (messages != null) {
+            for (TLRPC.Message bean : messages) {
+                if (bean.media != null) {
+                    isHasMedia = true;
+                    break;
+                }
+            }
+        }
+
+        if (!isHasMedia) {
+            if(messages != null) contextMessages.addAll(messages);
+            // 上下文没有图片以及其他需要耗时的操作，直接发送
+            prepareSendingMedia(accountInstance, media, dialogId,  replyToMsg, replyToTopMsg,
+                    inputContent, forceDocument, groupMedia, editingMessageObject, notify,
+                    scheduleDate, updateStikcersOrder);
+            return;
+        }
+        mediaSendQueue.postRunnable(() -> {
+            long beginTime = System.currentTimeMillis();
+            HashMap<TLRPC.MessageMedia, MediaSendAttachWorker> workers = new HashMap<>();
+
+            for (TLRPC.Message bean: messages) {
+                if (bean.media == null) continue;
+                final MediaSendAttachWorker worker = new MediaSendAttachWorker();
+                workers.put(bean.media, worker);
+
+                worker.sync = new CountDownLatch(1);
+                if (bean.params != null && bean.params.get(UserConfig.IMAGE_TRANSCODE) != null) {
+                    worker.encodePhoto = bean.params.get(UserConfig.IMAGE_TRANSCODE);
+                } else {
+                    mediaSendThreadPool.execute(() -> {
+                        if (bean.media.photo instanceof TLRPC.TL_photo) {
+                            worker.encodePhoto = ImageLoader
+                                    .getBase64Image((TLRPC.TL_photo) bean.media.photo,
+                                            getAccountInstance());
+                        } else {
+                            workers.remove(bean.media);
+                        }
+
+                        worker.sync.countDown();
+                    });
+                }
+            }
+
+            for (TLRPC.Message bean: messages) {
+                final MediaSendAttachWorker worker = workers.get(bean.media);
+
+                if (worker == null) continue;
+                String encodePhoto = worker.encodePhoto;
+
+                if (encodePhoto == null) {
+                    try {
+                        worker.sync.await();
+                    }catch (Exception e) {
+                        FileLog.e(e);
+                    }
+                    if (bean.params == null) bean.params = new HashMap<>();
+                    bean.params.put(UserConfig.IMAGE_TRANSCODE, worker.encodePhoto);
+                } else {
+                    if (bean.params == null) bean.params = new HashMap<>();
+                    bean.params.put(UserConfig.IMAGE_TRANSCODE, encodePhoto);
+                }
+            }
+
+            workers.clear();
+//                workers = null;
+            AndroidUtilities.runOnUIThread(() -> {
+
+                if(messages != null) contextMessages.addAll(messages);
+
+                prepareSendingMedia(accountInstance, media, dialogId,  replyToMsg, replyToTopMsg,
+                        inputContent, forceDocument, groupMedia, editingMessageObject, notify,
+                        scheduleDate, updateStikcersOrder);
+            });
+        });
+    }
+
     @UiThread
     public static void prepareSendingMedia(AccountInstance accountInstance, ArrayList<SendingMediaInfo> media, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, InputContentInfoCompat inputContent, boolean forceDocument, boolean groupMedia, MessageObject editingMessageObject, boolean notify, int scheduleDate, boolean updateStikcersOrder) {
         if (media.isEmpty()) {
@@ -9546,17 +9784,11 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                 // 只处理图片信息，不处理网络链接
                                 if (BuildVars.IS_CHAT_AIR) {
 
-                                    TLRPC.FileLocation location1
-                                            = photo.sizes.get(photo.sizes.size() - 1).location;
-                                    String imgPath = FileLoader
-                                            .getInstance(accountInstance.getCurrentAccount())
-                                            .getPathToAttach(location1, true).toString();
+                                    String imgBase64 = ImageLoader.getBase64Image(photo, accountInstance);
 
-                                    if (TextUtils.isEmpty(imgPath)) return;
+                                    if (TextUtils.isEmpty(imgBase64)) return;
 
-                                    String imgBase64 = BitmapsCache.encodeBitmapToBase64Png(imgPath);
-
-                                    if (params != null) params.put("base64",imgBase64);
+                                    if (params != null) params.put(UserConfig.IMAGE_TRANSCODE,imgBase64);
                                 }
 
                                 try {

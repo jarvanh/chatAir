@@ -3878,6 +3878,18 @@ public class ImageLoader {
         return photoSize;
     }
 
+    public static String getBase64Image(TLRPC.TL_photo photo, AccountInstance accountInstance) {
+        TLRPC.FileLocation location1
+                = photo.sizes.get(photo.sizes.size() - 1).location;
+        String imgPath = FileLoader
+                .getInstance(accountInstance.getCurrentAccount())
+                .getPathToAttach(location1, true).toString();
+
+        if (TextUtils.isEmpty(imgPath)) return "";
+
+        return BitmapsCache.encodeBitmapToBase64Png(imgPath);
+    }
+
     public static TLRPC.PhotoSize scaleAndSaveImage(Bitmap bitmap, float maxWidth, float maxHeight, int quality, boolean cache) {
         return scaleAndSaveImage(null, bitmap, Bitmap.CompressFormat.JPEG, false, maxWidth, maxHeight, quality, cache, 0, 0, false);
     }
