@@ -575,12 +575,12 @@ public class UserConfig extends BaseController {
         aiModelList.put(801, new AiModelBean("Gemini Pro 1.0", "gemini-pro", true));
         aiModelList.put(803, new AiModelBean("Gemini Pro 1.5", "gemini-1.5-pro-latest", true));
         aiModelList.put(804, new AiModelBean("Gemini Pro 1.5 Flash", "gemini-1.5-flash-latest", true));
-        aiModelList.put(802, new AiModelBean("Gemini Pro Vision", "gemini-pro-vision",
-                "Gemini Pro Vision (Picture model)", true));
+        aiModelList.put(802, new AiModelBean("Gemini Pro false", "gemini-pro-vision",
+                "Gemini Pro Vision (Picture model)", false));
         aiModelList.put(805, new AiModelBean("Gemini Pro 1.5 Picture", "gemini-1.5-pro-latest",
-                "Gemini Pro 1.5 (Picture model)", true));
+                "Gemini Pro 1.5 (Picture model)", false));
         aiModelList.put(806, new AiModelBean("Gemini 1.5 Flash Picture", "gemini-1.5-flash-latest",
-                "Gemini 1.5 Flash (Picture model)", true));
+                "Gemini 1.5 Flash (Picture model)", false));
 
     }
 

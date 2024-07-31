@@ -385,7 +385,7 @@ class PromptListActivity extends BaseFragment {
         dialogUser.flags2 |= MessagesController.UPDATE_MASK_CHAT_AIR_PROMPT;
         if (promptBean.getNum() == 2) {
             dialogUser.flags2 |= MessagesController.UPDATE_MASK_CHAT_AIR_AI_MODEL;
-            dialogUser.aiModel = 10;
+            dialogUser.aiModel = 13;
         }
         dialogUser.prompt = promptBean.content;
 
