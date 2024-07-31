@@ -92,7 +92,7 @@ public class UserConfig extends BaseController {
 
     public LinkedHashMap<Integer, AiModelBean> aiModelList = new LinkedHashMap<>();
     public final static String defaultPrompt = "You are a helpful AI assistant.";
-    public final static int defaultAiModel = 1;
+    public final static int defaultAiModel = 15;
     public final static double defaultTemperature = 0.7;
     public final static int defaultContextLimit = 30;
     public final static int defaultTokenLimit = -100;
@@ -520,6 +520,7 @@ public class UserConfig extends BaseController {
         } else {
             aiModelList = new LinkedHashMap<>();
         }
+        aiModelList.put(15, new AiModelBean("GPT-4o mini", "gpt-4o-mini", true));
         aiModelList.put(13, new AiModelBean("GPT-4o", "gpt-4o", true));
         aiModelList.put(1, new AiModelBean("GPT-3.5", "gpt-3.5-turbo", true));
         aiModelList.put(2, new AiModelBean("GPT-3.5-0613", "gpt-3.5-turbo-0613", false));
@@ -590,6 +591,8 @@ public class UserConfig extends BaseController {
         aiModelList.put(902, new AiModelBean("Claude 3 opus", "claude-3-opus-20240229",
                 true));
         aiModelList.put(903, new AiModelBean("Claude 3 sonnet", "claude-3-sonnet-20240229",
+                true));
+        aiModelList.put(904, new AiModelBean("Claude 3.5 sonnet", "claude-3-5-sonnet-20240620",
                 true));
 
     }
@@ -755,6 +758,9 @@ public class UserConfig extends BaseController {
 
         if (aiModel == 901) return true;
         if (aiModel == 902) return true;
+        if (aiModel == 903) return true;
+        if (aiModel == 904) return true;
+
 
         return false;
     }
