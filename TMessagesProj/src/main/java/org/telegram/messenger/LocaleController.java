@@ -258,6 +258,8 @@ public class LocaleController {
         addRules(new String[]{"mt"}, new PluralRules_Maltese());
         addRules(new String[]{"zh","zh-tw","zh-hk","zh-sg"}, new PluralRules_One());
         addRules(new String[]{"vi"}, new PluralRules_One());
+        addRules(new String[]{"jp"}, new PluralRules_One());
+        addRules(new String[]{"in"}, new PluralRules_One());
         addRules(new String[]{"ga", "se", "sma", "smi", "smj", "smn", "sms"}, new PluralRules_Two());
         addRules(new String[]{"ak", "am", "bh", "fil", "tl", "guw", "hi", "ln", "mg", "nso", "ti", "wa"}, new PluralRules_Zero());
         addRules(new String[]{"az", "bm", "fa", "ig", "hu", "ja", "kde", "kea", "ko", "my", "ses", "sg", "to",
@@ -348,6 +350,36 @@ public class LocaleController {
         localeInfo.nameEnglish = "Vietnamese";
         localeInfo.nameChinese = "越南语";
         localeInfo.shortName = localeInfo.pluralLangCode = "vi";
+        localeInfo.pathToFile = null;
+        localeInfo.builtIn = true;
+        languages.add(localeInfo);
+        languagesDict.put(localeInfo.shortName, localeInfo);
+
+        localeInfo = new LocaleInfo();
+        localeInfo.name = "Français";
+        localeInfo.nameEnglish = "French";
+        localeInfo.nameChinese = "法语";
+        localeInfo.shortName = localeInfo.pluralLangCode = "fr";
+        localeInfo.pathToFile = null;
+        localeInfo.builtIn = true;
+        languages.add(localeInfo);
+        languagesDict.put(localeInfo.shortName, localeInfo);
+
+        localeInfo = new LocaleInfo();
+        localeInfo.name = "日本語";
+        localeInfo.nameEnglish = "Japanese";
+        localeInfo.nameChinese = "日语";
+        localeInfo.shortName = localeInfo.pluralLangCode = "jp";
+        localeInfo.pathToFile = null;
+        localeInfo.builtIn = true;
+        languages.add(localeInfo);
+        languagesDict.put(localeInfo.shortName, localeInfo);
+
+        localeInfo = new LocaleInfo();
+        localeInfo.name = "Bahasa Inggris";
+        localeInfo.nameEnglish = "Indonesian";
+        localeInfo.nameChinese = "印尼语";
+        localeInfo.shortName = localeInfo.pluralLangCode = "in";
         localeInfo.pathToFile = null;
         localeInfo.builtIn = true;
         languages.add(localeInfo);
