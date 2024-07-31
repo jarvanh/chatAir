@@ -9666,7 +9666,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                     fillEditingMediaWithCaption(photos.get(0).caption, photos.get(0).entities);
                                     updateStickersOrder = photos.get(0).updateStickersOrder;
                                 }
-                                SendMessagesHelper.prepareSendingMedia(getAccountInstance(), photos, dialog_id, replyingMessageObject, getThreadMessage(), null, button == 4 || forceDocument, arg, editingMessageObject, notify, scheduleDate, updateStickersOrder);
+                                getAccountInstance().getSendMessagesHelper().prepareSendingMedia(getAccountInstance(), messages, photos, dialog_id, replyingMessageObject, getThreadMessage(), null, button == 4 || forceDocument, arg, editingMessageObject, notify, scheduleDate, updateStickersOrder);
                             }
                             afterMessageSend();
                             chatActivityEnterView.setFieldText("");
@@ -10487,8 +10487,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             chatAttachAlert.init();
             chatAttachAlert.setPhotoPicker();
 
-            String prompt = UserConfig.getUserAiPrompt(currentAccount, dialog_id);
-            chatAttachAlert.getCommentTextView().setText(prompt);
+            boolean isGeminiProVision = UserConfig.isGeminiProVision(currentAccount, dialog_id);
+            if(isGeminiProVision) {
+                String prompt = UserConfig.getUserAiPrompt(currentAccount, dialog_id);
+                chatAttachAlert.getCommentTextView().setText(prompt);
+            }
 
             AndroidUtilities.logEvent("openAttachMenu", "photoPicker");
         } else {
@@ -17881,12 +17884,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
                 int lastModel = (int) args[0];
 
-                // 如果从图片切换为文字则处理，其他不处理
-                // todo 两个图片模型切换不应该发送清除上下文
-                boolean isVision
-                        = UserConfig.getInstance(currentAccount).isJudgeByModelVision(lastModel);
-
-                if (isVision) getMessagesController().clearContext(dialog_id);
             }
 
         } else if (id == NotificationCenter.replaceMessagesObjects) {
@@ -22909,7 +22906,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
 
         fixLayout();
-        if (BuildVars.IS_CHAT_AIR && !UserConfig.isUserVision(currentAccount, dialog_id)) {
+        if (BuildVars.IS_CHAT_AIR) {
             applyDraftMaybe(false);
         }
         if (bottomOverlayChat != null && bottomOverlayChat.getVisibility() != View.VISIBLE && !actionBar.isSearchFieldVisible()) {

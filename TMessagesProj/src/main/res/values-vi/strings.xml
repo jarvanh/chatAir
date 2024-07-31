@@ -3571,9 +3571,6 @@
     <string name="ValidateTitle">Xác thực</string>
     <string name="ValidateSuccess">Xác thực thành công</string>
     <string name="FindKey">Tìm khóa API</string>
-    <string name="FindKeyUrl">https://platform.openai.com/account/api-keys</string>
-    <string name="FindGoogleKeyUrl">https://makersuite.google.com/app/apikey</string>
-    <string name="FindClaudeKeyUrl">https://console.anthropic.com</string>
     <string name="ChangeApiServer">Máy chủ API</string>
     <string name="DefaultApiServe">Máy chủ API đặt lại về mặc định</string>
     <string name="MalformedUrl">Url không đúng định dạng</string>
@@ -3592,8 +3589,6 @@
     <string name="ModifyPrompts">Sửa đổi lời nhắc</string>
     <string name="AddPrompt">Thêm lời nhắc</string>
     <string name="EmailMe">Gửi thư điện tử cho tôi</string>
-    <string name="AskAQuestionUrl">https://github.com/flyun/chatAir/discussions</string>
-    <string name="FaqUrl">https://github.com/flyun/chatAir/wiki/Common-problem</string>
 
     <!--chatAir End-->
 

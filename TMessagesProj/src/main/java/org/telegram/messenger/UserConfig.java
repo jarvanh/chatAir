@@ -33,6 +33,8 @@ public class UserConfig extends BaseController {
     public final static int MAX_ACCOUNT_DEFAULT_COUNT = 3;
     public final static int MAX_ACCOUNT_COUNT = 4;
 
+    public final static String IMAGE_TRANSCODE = "base64";
+
     private final Object sync = new Object();
     private volatile boolean configLoaded;
     private TLRPC.User currentUser;
@@ -90,16 +92,21 @@ public class UserConfig extends BaseController {
 
     public LinkedHashMap<Integer, AiModelBean> aiModelList = new LinkedHashMap<>();
     public final static String defaultPrompt = "You are a helpful AI assistant.";
-    public final static int defaultAiModel = 1;
+    public final static int defaultAiModel = 15;
     public final static double defaultTemperature = 0.7;
     public final static int defaultContextLimit = 30;
     public final static int defaultTokenLimit = -100;
     public final static String defaultCustomModel = "";
+    public final static boolean defaultOldAgreement = false;
+
+    public final static boolean defaultGeminiSafe = true;
 
     public final static boolean defaultStreamResponses = true;
     public final static boolean defaultRenderMarkdown = true;
     public final static boolean defaultAutoHideKeyboard = false;
     public final static boolean defaultSwitchSubtitleContent = false;
+
+    public final static boolean defaultHideToolbar = false;
 
     public final static int defaultUserId = 2000;
 
@@ -112,9 +119,10 @@ public class UserConfig extends BaseController {
     public int contextLimit = defaultContextLimit;
     public int tokenLimit = defaultTokenLimit;
     public String customModel;
+    public boolean isOldAgreement = defaultOldAgreement;
+    public boolean isGeminiSafe = defaultGeminiSafe;
 
-    // GeminiProVision只支持一问一答，不支持上下文，不支持多轮会话
-    public final static  int defaultContextLimitGeminiProVision = 0;
+    public boolean isHideToolbar = defaultHideToolbar;
 
     public String apiKey;
     public String apiServer = defaultApiServer;
@@ -276,6 +284,9 @@ public class UserConfig extends BaseController {
                         editor.putBoolean("renderMarkdown", renderMarkdown);
                         editor.putBoolean("autoHideKeyboard", autoHideKeyboard);
                         editor.putBoolean("switchSubtitleContent", switchSubtitleContent);
+                        editor.putBoolean("oldAgreement", isOldAgreement);
+                        editor.putBoolean("geminiSafe", isGeminiSafe);
+                        editor.putBoolean("hideToolbar", isHideToolbar);
                     }
 
                     if (unacceptedTermsOfService != null) {
@@ -481,12 +492,15 @@ public class UserConfig extends BaseController {
                 contextLimit = preferences.getInt("contextLimit", defaultContextLimit);
                 tokenLimit = preferences.getInt("tokenLimit", defaultTokenLimit);
                 customModel = preferences.getString("customModel", defaultCustomModel);
+                isOldAgreement = preferences.getBoolean("oldAgreement", defaultOldAgreement);
+                isGeminiSafe = preferences.getBoolean("geminiSafe", defaultGeminiSafe);
                 apiKey = preferences.getString("apiKey", "");
                 apiServer = preferences.getString("apiServer", defaultApiServer);
                 streamResponses = preferences.getBoolean("streamResponses", defaultStreamResponses);
                 renderMarkdown = preferences.getBoolean("renderMarkdown", defaultRenderMarkdown);
                 autoHideKeyboard = preferences.getBoolean("autoHideKeyboard", defaultAutoHideKeyboard);
                 switchSubtitleContent = preferences.getBoolean("switchSubtitleContent", defaultSwitchSubtitleContent);
+                isHideToolbar = preferences.getBoolean("hideToolbar", defaultHideToolbar);
 
                 apiKeyGoogle = preferences.getString("apiKeyGoogle", "");
                 apiServerGoogle = preferences.getString("apiServerGoogle", defaultApiServerGoogle);
@@ -506,22 +520,24 @@ public class UserConfig extends BaseController {
         } else {
             aiModelList = new LinkedHashMap<>();
         }
+        aiModelList.put(15, new AiModelBean("GPT-4o mini", "gpt-4o-mini", true));
+        aiModelList.put(13, new AiModelBean("GPT-4o", "gpt-4o", true));
         aiModelList.put(1, new AiModelBean("GPT-3.5", "gpt-3.5-turbo", true));
         aiModelList.put(2, new AiModelBean("GPT-3.5-0613", "gpt-3.5-turbo-0613", false));
         aiModelList.put(3, new AiModelBean("GPT-3.5-16k", "gpt-3.5-turbo-16k", true));
         aiModelList.put(4, new AiModelBean("GPT-3.5-16k-0613", "gpt-3.5-turbo-16k-0613", false));
         aiModelList.put(12, new AiModelBean("GPT-3.5-0125", "gpt-3.5-turbo-0125", true));
         aiModelList.put(5, new AiModelBean("GPT-4", "gpt-4", true));
+        aiModelList.put(16, new AiModelBean("GPT-4 Trubo", "gpt-4-turbo", true));
         aiModelList.put(6, new AiModelBean("GPT-4-0613", "gpt-4-0613", false));
         aiModelList.put(7, new AiModelBean("GPT-4-32k", "gpt-4-32k", true));
         aiModelList.put(8, new AiModelBean("GPT-4-32k-0613", "gpt-4-32k-0613", false));
         aiModelList.put(9, new AiModelBean("GPT-4-1106-preview", "gpt-4-1106-preview", false));
         aiModelList.put(11, new AiModelBean("GPT-4-0125-preview", "gpt-4-0125-preview", true));
-        aiModelList.put(13, new AiModelBean("GPT-4o", "gpt-4o", true));
         aiModelList.put(10, new AiModelBean("GPT-4-vision-preview", "gpt-4-vision-preview",
-                "GPT-4-vision-preview (Picture model)", true));
+                "GPT-4-vision-preview (Picture model)", false));
         aiModelList.put(14, new AiModelBean("GPT-4o-Picture", "gpt-4o",
-                "GPT-4o (Picture model)", true));
+                "GPT-4o (Picture model)", false));
 //        initOpenrouter();
         initGoogle();
         initClaude();
@@ -797,17 +813,48 @@ public class UserConfig extends BaseController {
         return false;
     }
 
-    public static boolean isUserVision(int currentAccount, TLRPC.User user) {
+    public static boolean isSupportImageModel(int currentAccount, long userId) {
 
-        int aiModel= getUserAiModel(currentAccount, user);
-        return UserConfig.getInstance(currentAccount).isJudgeByModelVision(aiModel);
 
+        int aiModel = getUserAiModel(currentAccount, userId);
+
+        // OpenAI
+        if (aiModel == 10
+            || aiModel == 13
+            || aiModel == 14
+            || aiModel == 15
+            || aiModel == 16
+        ) {
+            if(UserConfig.getInstance(currentAccount).isOldAgreement) return false;
+            return true;
+        }
+
+        // Gemini
+        if (aiModel == 802
+                || aiModel == 803
+                || aiModel == 804
+                || aiModel == 805
+                || aiModel == 806
+        ) return true;
+
+        // Claude
+        if (aiModel == 903
+                || aiModel == 904
+        ) return true;
+
+        // Custom model
+        if (aiModel == 0) {
+            if(UserConfig.getInstance(currentAccount).isOldAgreement) return false;
+            return true;
+        }
+
+        return false;
     }
-    public static boolean isUserVision(int currentAccount, long userId) {
 
-        int aiModel= getUserAiModel(currentAccount, userId);
-        return UserConfig.getInstance(currentAccount).isJudgeByModelVision(aiModel);
-
+    // 兼容Gemini Pro Vision 模型不支持上下文
+    public static boolean isGeminiProVision (int currentAccount, long userId) {
+        int aiModel = getUserAiModel(currentAccount, userId);
+        return aiModel == 802;
     }
 
     // 是否使用图片模型
@@ -980,6 +1027,9 @@ public class UserConfig extends BaseController {
             contextLimit = defaultContextLimit;
             tokenLimit = defaultTokenLimit;
             customModel = defaultCustomModel;
+            isOldAgreement = defaultOldAgreement;
+            isGeminiSafe = defaultGeminiSafe;
+            isHideToolbar = defaultHideToolbar;
             apiKey = "";
             apiServer = defaultApiServer;
             apiKeyGoogle = "";

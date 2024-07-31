@@ -1691,7 +1691,7 @@
     <string name="Orange">橙色</string>
     <string name="Yellow">黄色</string>
     <string name="Green">绿色</string>
-    <string name="Teal">凫绿</string>
+    <string name="Teal">青绿</string>
     <string name="Purple">紫色</string>
     <string name="Pink">粉色</string>
     <string name="Brown">褐色</string>
@@ -4161,6 +4161,10 @@
     <string name="ResetAiParametersTips">仅适用于当前聊天AI</string>
     <string name="ResetAllAiParametersTips">仅适用于未配置参数的聊天AI</string>
     <string name="ResetAiParametersText">聊天AI参数已重置为默认值</string>
+    <string name="OpenAiOldAgreementParametersTips">OpenAI 切换旧协议</string>
+    <string name="OpenAiOldAgreementAiParametersText">OpenAI 开启旧协议不支持发送图片</string>
+    <string name="GeminiSafeParametersTips">Gemini 安全选项</string>
+    <string name="GeminiAiSafeParametersText">是否开启Gemini安全选项</string>
     <string name="TemperatureLowValue">最精确</string>
     <string name="TemperatureHighValue">最随机</string>
     <string name="TokenText">Token</string>
@@ -4186,6 +4190,7 @@
     <string name="AutoHideKeyboardInfo">发送消息后自动隐藏键盘</string>
     <string name="SwitchSubtitleContent">切换副标题内容</string>
     <string name="SwitchSubtitleContentTips">切换副标题的字数内容或者模型内容</string>
+    <string name="HideToolbar">隐藏聊天标题栏</string>
     <string name="CustomModel">自定义模型</string>
     <string name="ChangeCustomModel">更改自定义模型</string>
     <string name="CasualTalk">闲聊</string>

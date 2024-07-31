@@ -889,9 +889,7 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
                 long tempWords = 0;
 
                 int contextLimit;
-                if (UserConfig.isUserVision(currentAccount, user)) {
-                    contextLimit = UserConfig.defaultContextLimitGeminiProVision;
-                }else if (user != null && (user.flags2
+                if (user != null && (user.flags2
                         & MessagesController.UPDATE_MASK_CHAT_AIR_AI_CONTEXT_LIMIT) != 0) {
                     contextLimit = user.contextLimit;
                 } else {

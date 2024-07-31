@@ -1962,11 +1962,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
             attachLayout.setEnabled(false);
             attachLayout.setPivotX(AndroidUtilities.dp(48));
             attachLayout.setClipChildren(false);
-            if (BuildVars.IS_CHAT_AIR) {
-                messageEditTextContainer.addView(attachLayout, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 48, Gravity.BOTTOM | Gravity.LEFT));
-            } else {
-                messageEditTextContainer.addView(attachLayout, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 48, Gravity.BOTTOM | Gravity.RIGHT));
-            }
+            messageEditTextContainer.addView(attachLayout, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 48, Gravity.BOTTOM | Gravity.RIGHT));
             //提醒按钮
             notifyButton = new ImageView(context);
             notifySilentDrawable = new CrossOutDrawable(context, R.drawable.input_notify_on, Theme.key_chat_messagePanelIcons);
@@ -5493,37 +5489,12 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
 
                    //发送消息后，必须更新消息或者消息失败，才能进行下一次发送，否则发送功能失效
                    ArrayList<MessageObject> messages = getParentFragment().messages;
-                   ArrayList<TLRPC.Message> messageOwners = new ArrayList<>();
+                   ArrayList<TLRPC.Message> messageOwners
+                           = SendMessagesHelper.getInstance(currentAccount)
+                           .handleContextMessage(messages, dialog_id);
 
-                   TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialog_id);
-
-                   if (user == null || messages == null) return false;
-
-                   int contextLimit;
-
-                   if (UserConfig.isUserVision(currentAccount, user)) {
-                       contextLimit = UserConfig.defaultContextLimitGeminiProVision;
-                   } else if ((user.flags2 & MessagesController.UPDATE_MASK_CHAT_AIR_AI_CONTEXT_LIMIT) != 0
-                           && user.contextLimit != -1) {
-                       contextLimit = user.contextLimit;
-                   } else {
-                       //全局默认配置
-                       contextLimit = UserConfig.getInstance(currentAccount).contextLimit;
-                   }
-
-                   int i = 0;
-                   for (MessageObject messageObject : messages) {
-                       //聊天类型以及其他特殊事件类型
-                       if (messageObject.type == 10 && messageObject.messageOwner.action
-                               instanceof TLRPC.TL_messageActionClearContext) {
-                           break;
-                       }
-
-                       if (messageObject.type == 0) {
-                           i++;
-                           if (i > contextLimit) break;
-                           messageOwners.add(messageObject.messageOwner);
-                       }
+                   if (messageOwners == null) {
+                       messageOwners = new ArrayList<>();
                    }
 
                    if (UserConfig.getInstance(currentAccount).autoHideKeyboard
@@ -9437,25 +9408,17 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
             isHideStopStream = !isShowStopStream;
             cancelStreamButton.setVisibility(isShowStopStream ? VISIBLE : GONE);
             sendButtonContainer.setVisibility(!isShowStopStream ? VISIBLE : GONE);
+            attachButton.setVisibility(!isShowStopStream ? VISIBLE : GONE);
         } else if (id == NotificationCenter.updateModel) {
             updateAttachInterface();
         }
     }
 
     private void updateAttachInterface() {
-        boolean isVision;
 
-        isVision = UserConfig.isUserVision(currentAccount, dialog_id);
-        if (isVision){
-
-            // todo 是否提示用户切换模型会清除输入框内容
-            setFieldText("", false);
-
-            if (editingMessageObject != null) setEditingMessageObject(null, false);
-
-            if (messageEditText != null) messageEditText.setVisibility(GONE);
+        if(UserConfig.isSupportImageModel(currentAccount, dialog_id)) {
+            if (messageEditText != null) messageEditText.setVisibility(VISIBLE);
             if (attachButton != null) attachButton.setVisibility(VISIBLE);
-
         } else {
             if (messageEditText != null) messageEditText.setVisibility(VISIBLE);
             if (attachButton != null) attachButton.setVisibility(GONE);
