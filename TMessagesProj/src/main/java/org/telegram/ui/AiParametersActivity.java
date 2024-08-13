@@ -109,9 +109,9 @@ public class AiParametersActivity extends BaseFragment implements NotificationCe
         openOldAgreementAiRow = rowCount++;
         openAiSectionRow = rowCount++;
 
-//        geminiHeaderRow = rowCount++;
-//        geminiSafeRow = rowCount++;
-//        geminiSectionRow = rowCount++;
+        geminiHeaderRow = rowCount++;
+        geminiSafeRow = rowCount++;
+        geminiSectionRow = rowCount++;
 
         if (notify && adapter != null) {
             adapter.notifyDataSetChanged();
@@ -432,7 +432,7 @@ public class AiParametersActivity extends BaseFragment implements NotificationCe
                 getUserConfig().saveConfig(false);
 
                 if (view instanceof TextCheckCell) {
-                    ((TextCheckCell) view).setChecked(getUserConfig().isGeminiSafe);
+                    ((TextCheckCell) view).setChecked(!getUserConfig().isGeminiSafe);
                 }
             }
 
@@ -625,7 +625,7 @@ public class AiParametersActivity extends BaseFragment implements NotificationCe
                                         R.string.GeminiSafeParametersTips),
                                 LocaleController.getString("GeminiAiSafeParametersText",
                                         R.string.GeminiAiSafeParametersText),
-                                getUserConfig().isGeminiSafe, false, false);
+                                !getUserConfig().isGeminiSafe, false, false);
 
                     } else if(position == openOldAgreementAiRow) {
                         textCheckCell.setTextAndValueAndCheck(LocaleController.getString("OpenAiOldAgreementParametersTips", R.string.OpenAiOldAgreementParametersTips),

@@ -3555,7 +3555,7 @@
     <string name="OpenAiOldAgreementParametersTips">OpenAI switches to old protocol</string>
     <string name="OpenAiOldAgreementAiParametersText">OpenAI opens the old protocol and does not support sending pictures</string>
     <string name="GeminiSafeParametersTips">Gemini security options</string>
-    <string name="GeminiAiSafeParametersText">Whether to enable Gemini security options</string>
+    <string name="GeminiAiSafeParametersText">Turn off Gemini security options</string>
     <string name="TemperatureLowValue">Most Precise</string>
     <string name="TemperatureHighValue">Most Random</string>
     <string name="TokenText">Token</string>

@@ -60,6 +60,9 @@ import com.theokanning.openai.completion.chat.ChatGMessage;
 import com.theokanning.openai.completion.chat.ChatGMessagePart;
 import com.theokanning.openai.completion.chat.ChatGMessagePartInnerData;
 import com.theokanning.openai.completion.chat.ChatGMessageRole;
+import com.theokanning.openai.completion.chat.ChatGSafetyCategory;
+import com.theokanning.openai.completion.chat.ChatGSafetySetting;
+import com.theokanning.openai.completion.chat.ChatGSafetyThreshold;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.completion.chat.ChatMessageRole;
 import com.theokanning.openai.completion.chat.ChatMultiMessage;
@@ -6892,6 +6895,23 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         List<ChatGMessage> contents = getChatChatGMessageList(prompt, originalPath, isGeminiProVision, msgObj);
 
         completionRequest.setContents(contents);
+
+        if(!UserConfig.getInstance(currentAccount).isGeminiSafe) {
+
+            List<ChatGSafetySetting> safetySettings = new ArrayList<>();
+
+            for(ChatGSafetyCategory category : ChatGSafetyCategory.values()) {
+                ChatGSafetySetting safetySetting = ChatGSafetySetting.builder()
+                        .category(category.value())
+                        .threshold(ChatGSafetyThreshold.BLOCK_NONE.value())
+                        .build();
+
+                safetySettings.add(safetySetting);
+            }
+
+            completionRequest.setSafetySettings(safetySettings);
+
+        }
 
         BaseMessage baseMessage = new BaseMessage();
         baseMessage.setDialog_id(newMsgObj.dialog_id);

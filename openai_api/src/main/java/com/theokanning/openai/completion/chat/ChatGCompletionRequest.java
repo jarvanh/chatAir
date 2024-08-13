@@ -26,6 +26,7 @@ public class ChatGCompletionRequest {
     @JsonProperty("generationConfig")
     ChatGGenerationConfig generationConfig;
 
-//    ChatGSafetySetting safetySettings;
+    @JsonProperty("safetySettings")
+    List<ChatGSafetySetting> safetySettings;
 
 }
