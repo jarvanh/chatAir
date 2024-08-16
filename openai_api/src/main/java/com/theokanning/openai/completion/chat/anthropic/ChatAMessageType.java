@@ -5,7 +5,8 @@ package com.theokanning.openai.completion.chat.anthropic;
  */
 public enum ChatAMessageType {
     TEXT_DELTA("text_delta"),
-    TEXT("text");
+    TEXT("text"),
+    IMAGE("image");
 
     private final String value;
 

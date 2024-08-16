@@ -6805,12 +6805,14 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
             ChatARequestMessage systemUserMessage = new ChatARequestMessage();
             systemUserMessage.setRole(ChatAMessageRole.USER.value());
-            systemUserMessage.setContent(prompt);
+            List<ChatAMessage> list = new ArrayList<>();
+            systemUserMessage.setContentText(list, prompt);
             chatMessageList.add(systemUserMessage);
 
             ChatARequestMessage systemMessage = new ChatARequestMessage();
             systemMessage.setRole(ChatAMessageRole.ASSISTANT.value());
-            systemMessage.setContent("ok");
+            List<ChatAMessage> systemList = new ArrayList<>();
+            systemMessage.setContentText(systemList, "ok");
 
             chatMessageList.add(systemMessage);
 
@@ -6823,17 +6825,52 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
             chatMessage.setRole(message.out ? ChatAMessageRole.USER.value()
                     : ChatAMessageRole.ASSISTANT.value());
-            chatMessage.setContent(message.message);
+
+            List<ChatAMessage> contents = new ArrayList<>();
+
+            if (message.params != null &&  message.params.containsKey(UserConfig.IMAGE_TRANSCODE)) {
+                // 图片
+                String photoEncode = message.params.remove(UserConfig.IMAGE_TRANSCODE);
+
+                if (photoEncode != null && !photoEncode.isEmpty()) {
+                    chatMessage.setContentImg(contents, photoEncode);
+                }
+
+            }
+
+            // 文字
+            if(!TextUtils.isEmpty(message.message)) {
+                chatMessage.setContentText(contents, message.message);
+            }
 
             chatMessageList.add(chatMessage);
 
         }
 
         //添加需要发送的内容
-        if (msgObj.messageOwner != null && !TextUtils.isEmpty(msgObj.messageOwner.message)) {
+        if (msgObj.messageOwner != null) {
             ChatARequestMessage sendChatMessage = new ChatARequestMessage();
             sendChatMessage.setRole(ChatMessageRole.USER.value());
-            sendChatMessage.setContent(msgObj.messageOwner.message);
+
+            TLRPC.Message message = msgObj.messageOwner;
+            List<ChatAMessage> contents = new ArrayList<>();
+
+
+            if (message.params != null &&  message.params.containsKey(UserConfig.IMAGE_TRANSCODE)) {
+                // 图片
+                String photoEncode = message.params.remove(UserConfig.IMAGE_TRANSCODE);
+
+                if (photoEncode != null && !photoEncode.isEmpty()) {
+                    sendChatMessage.setContentImg(contents, photoEncode);
+                }
+
+            }
+
+            // 文字
+            if(!TextUtils.isEmpty(message.message)) {
+                sendChatMessage.setContentText(contents, message.message);
+            }
+
             chatMessageList.add(sendChatMessage);
         }
 

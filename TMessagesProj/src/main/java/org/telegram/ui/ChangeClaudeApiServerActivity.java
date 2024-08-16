@@ -11,14 +11,12 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.theokanning.openai.OpenAiHttpException;
-import com.theokanning.openai.OpenAiResponse;
 import com.theokanning.openai.completion.chat.anthropic.AnthropicHttpException;
 import com.theokanning.openai.completion.chat.anthropic.ChatACompletionRequest;
 import com.theokanning.openai.completion.chat.anthropic.ChatACompletionResponse;
+import com.theokanning.openai.completion.chat.anthropic.ChatAMessage;
 import com.theokanning.openai.completion.chat.anthropic.ChatAMessageRole;
 import com.theokanning.openai.completion.chat.anthropic.ChatARequestMessage;
-import com.theokanning.openai.model.Model;
 import com.theokanning.openai.service.LLMType;
 import com.theokanning.openai.service.OpenAiService;
 
@@ -271,7 +269,8 @@ public class ChangeClaudeApiServerActivity extends BaseFragment {
         List<ChatARequestMessage> chatMessageList = new ArrayList<>();
         ChatARequestMessage systemUserMessage = new ChatARequestMessage();
         systemUserMessage.setRole(ChatAMessageRole.USER.value());
-        systemUserMessage.setContent("hi");
+        List<ChatAMessage> contents = new ArrayList<>();
+        systemUserMessage.setContentText(contents, "hi");
         chatMessageList.add(systemUserMessage);
         completionRequest.setMessages(chatMessageList);
 

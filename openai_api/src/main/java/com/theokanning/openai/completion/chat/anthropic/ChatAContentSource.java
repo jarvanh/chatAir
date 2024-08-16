@@ -7,19 +7,19 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Created by flyun on 2024/4/4.
+ * Created by flyun on 2024/8/15.
  */
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ChatAMessage {
+class ChatAContentSource {
 
-   /**
-    * You may use {@link ChatAMessageType} enum.
-    */
+   @JsonProperty("data")
+   String data;
+   @JsonProperty("media_type")
+   String mediaType;
+   @JsonProperty("type")
    String type;
-   String text;
 
-   @JsonProperty("source")
-   ChatAContentSource source;
 }

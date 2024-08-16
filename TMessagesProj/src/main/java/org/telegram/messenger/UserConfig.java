@@ -838,7 +838,9 @@ public class UserConfig extends BaseController {
         ) return true;
 
         // Claude
-        if (aiModel == 903
+        if (aiModel == 901
+                || aiModel == 902
+                || aiModel == 903
                 || aiModel == 904
         ) return true;
 
