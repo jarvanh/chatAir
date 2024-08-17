@@ -91,6 +91,8 @@ public class ActionBar extends FrameLayout {
     private boolean occupyStatusBar = Build.VERSION.SDK_INT >= 21;
     private boolean actionModeVisible;
     private boolean addToContainer = true;
+
+    private boolean isHide = false;
     private boolean clipContent;
     private boolean interceptTouches = true;
     private boolean forceSkipTouches;
@@ -1195,7 +1197,7 @@ public class ActionBar extends FrameLayout {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int width = MeasureSpec.getSize(widthMeasureSpec);
         int height = MeasureSpec.getSize(heightMeasureSpec);
-        int actionBarHeight = getCurrentActionBarHeight();
+        int actionBarHeight = getActionBarHeight();
         int actionBarHeightSpec = MeasureSpec.makeMeasureSpec(actionBarHeight, MeasureSpec.EXACTLY);
 
         ignoreLayoutRequest = true;
@@ -1334,33 +1336,33 @@ public class ActionBar extends FrameLayout {
             if (titleTextView[i] != null && titleTextView[i].getVisibility() != GONE) {
                 int textTop;
                 if (((fromBottom && i == 0) || (!fromBottom && i == 1)) && overlayTitleAnimation && titleAnimationRunning) {
-                    textTop = (getCurrentActionBarHeight() - titleTextView[i].getTextHeight()) / 2;
+                    textTop = (getActionBarHeight() - titleTextView[i].getTextHeight()) / 2;
                 } else {
                     if ((subtitleTextView != null && subtitleTextView.getVisibility() != GONE)) {
-                        textTop = (getCurrentActionBarHeight() / 2 - titleTextView[i].getTextHeight()) / 2 + AndroidUtilities.dp(!AndroidUtilities.isTablet() && getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 2 : 3);
+                        textTop = (getActionBarHeight() / 2 - titleTextView[i].getTextHeight()) / 2 + AndroidUtilities.dp(!AndroidUtilities.isTablet() && getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 2 : 3);
                     } else {
-                        textTop = (getCurrentActionBarHeight() - titleTextView[i].getTextHeight()) / 2;
+                        textTop = (getActionBarHeight() - titleTextView[i].getTextHeight()) / 2;
                     }
                 }
                 titleTextView[i].layout(textLeft, additionalTop + textTop - titleTextView[i].getPaddingTop(), textLeft + titleTextView[i].getMeasuredWidth(), additionalTop + textTop + titleTextView[i].getTextHeight() - titleTextView[i].getPaddingTop() + titleTextView[i].getPaddingBottom());
             }
         }
         if (subtitleTextView != null && subtitleTextView.getVisibility() != GONE) {
-            int textTop = getCurrentActionBarHeight() / 2 + (getCurrentActionBarHeight() / 2 - subtitleTextView.getTextHeight()) / 2 - AndroidUtilities.dp(!AndroidUtilities.isTablet() && getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 1 : 1);
+            int textTop = getActionBarHeight() / 2 + (getActionBarHeight() / 2 - subtitleTextView.getTextHeight()) / 2 - AndroidUtilities.dp(!AndroidUtilities.isTablet() && getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 1 : 1);
             subtitleTextView.layout(textLeft, additionalTop + textTop, textLeft + subtitleTextView.getMeasuredWidth(), additionalTop + textTop + subtitleTextView.getTextHeight());
         }
 
         if (additionalSubtitleTextView != null && additionalSubtitleTextView.getVisibility() != GONE) {
-            int textTop = getCurrentActionBarHeight() / 2 + (getCurrentActionBarHeight() / 2 - additionalSubtitleTextView.getTextHeight()) / 2 - AndroidUtilities.dp(!AndroidUtilities.isTablet() && getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 1 : 1);
+            int textTop = getActionBarHeight() / 2 + (getActionBarHeight() / 2 - additionalSubtitleTextView.getTextHeight()) / 2 - AndroidUtilities.dp(!AndroidUtilities.isTablet() && getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 1 : 1);
             additionalSubtitleTextView.layout(textLeft, additionalTop + textTop, textLeft + additionalSubtitleTextView.getMeasuredWidth(), additionalTop + textTop + additionalSubtitleTextView.getTextHeight());
         }
 
         if (avatarSearchImageView != null) {
             avatarSearchImageView.layout(
                 AndroidUtilities.dp(56 + 8),
-                additionalTop + (getCurrentActionBarHeight() - avatarSearchImageView.getMeasuredHeight()) / 2,
+                additionalTop + (getActionBarHeight() - avatarSearchImageView.getMeasuredHeight()) / 2,
                 AndroidUtilities.dp(56 + 8) + avatarSearchImageView.getMeasuredWidth(),
-                additionalTop + (getCurrentActionBarHeight() + avatarSearchImageView.getMeasuredHeight()) / 2
+                additionalTop + (getActionBarHeight() + avatarSearchImageView.getMeasuredHeight()) / 2
             );
         }
 
@@ -1410,6 +1412,14 @@ public class ActionBar extends FrameLayout {
             }
             child.layout(childLeft, childTop, childLeft + width, childTop + height);
         }
+    }
+
+    public void setHide(boolean hide) {
+        isHide = hide;
+    }
+
+    public boolean isHide() {
+        return isHide;
     }
 
     public void onMenuButtonPressed() {
@@ -1619,6 +1629,10 @@ public class ActionBar extends FrameLayout {
             return false;
         }
         return super.onTouchEvent(event) || interceptTouches;
+    }
+    public int getActionBarHeight() {
+        if(isHide) return 0;
+        return getCurrentActionBarHeight();
     }
 
     public static int getCurrentActionBarHeight() {

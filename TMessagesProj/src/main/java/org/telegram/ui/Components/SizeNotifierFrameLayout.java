@@ -156,6 +156,7 @@ public class SizeNotifierFrameLayout extends FrameLayout {
                     drawable.setAlpha(255);
                 }
                 if (drawable instanceof MotionBackgroundDrawable) {
+                    // 配置背景
                     MotionBackgroundDrawable motionBackgroundDrawable = (MotionBackgroundDrawable) drawable;
                     if (motionBackgroundDrawable.hasPattern()) {
                         int actionBarHeight = (isActionBarVisible() ? ActionBar.getCurrentActionBarHeight() : 0) + (Build.VERSION.SDK_INT >= 21 && occupyStatusBar ? AndroidUtilities.statusBarHeight : 0);

@@ -1874,7 +1874,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
         @Override
         public void onWindowSizeChanged(int size) {
-            if (size < AndroidUtilities.dp(72) + ActionBar.getCurrentActionBarHeight()) {
+            if (size < AndroidUtilities.dp(72) + actionBar.getActionBarHeight()) {
                 allowStickersPanel = false;
                 if (suggestEmojiPanel.getVisibility() == View.VISIBLE && !BuildVars.IS_CHAT_AIR) {
                     suggestEmojiPanel.setVisibility(View.INVISIBLE);
@@ -3041,25 +3041,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         VoIPHelper.startCall(currentUser, id == video_call, userInfo != null && userInfo.video_calls_available, getParentActivity(), getMessagesController().getUserFull(currentUser.id), getAccountInstance());
                     }
                 } else if (id == context_clear) {
-
-                    if (messages != null && messages.size() > 0 && (messages.get(0).type != 10)) {
-                        getMessagesController().clearContext(dialog_id);
-                    }
-
+                    clearContext();
                 } else if (id == undo_context_clear) {
-
-                    if (messages != null && messages.size() > 0) {
-                        MessageObject messageObject = messages.get(0);
-
-                        if (messageObject.type == 10 && messageObject.messageOwner.action
-                                instanceof TLRPC.TL_messageActionClearContext) {
-                            ArrayList<Integer> arr = new ArrayList<>();
-                            arr.add(messageObject.messageOwner.id);
-                            //cacheOnly为true则不向服务器发送删除数据
-                            getMessagesController()
-                                .deleteMessages(arr, null, null, dialog_id, false, false, true, 0, null);
-                        }
-                    }
+                    unClearContext();
                 } else if (id == change_user_ai_parameters) {
                     if (avatarContainer != null) {
                         avatarContainer.openProfile(true);
@@ -3244,6 +3228,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             getConnectionsManager().bindRequestToGuid(req, classGuid);
         } else {
             //添加actionBar内容view
+            if(getUserConfig().isHideToolbar) {
+                avatarContainer.setVisibility(View.GONE);
+            }
             actionBar.addView(avatarContainer, 0, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT, !inPreviewMode ? 56 : (chatMode == MODE_PINNED ? 10 : 0), 0, 40, 0));
         }
 
@@ -7196,6 +7183,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         };
         //背景模糊配置
         actionBar.setDrawBlurBackground(contentView);
+        if(getUserConfig().isHideToolbar) {
+            actionBar.setHide(true);
+        }
 
         if (isTopic) {
             reactionsMentionCount = forumTopic.unread_reactions_count;
@@ -8803,7 +8793,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     @Override
     public int getPreviewHeight() {
         if (chatMode == MODE_PINNED && messages.size() == 2) {
-            return getHeightForMessage(messages.get(0)) + AndroidUtilities.dp(80) + ActionBar.getCurrentActionBarHeight();
+            return getHeightForMessage(messages.get(0)) + AndroidUtilities.dp(80) + actionBar.getActionBarHeight();
         }
         return super.getPreviewHeight();
     }
@@ -13324,6 +13314,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
         @Override
         protected boolean isActionBarVisible() {
+            if(actionBar.isHide()) return false;
             return actionBar.getVisibility() == VISIBLE;
         }
 
@@ -23884,6 +23875,21 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                             items.add(LocaleController.getString("Copy", R.string.Copy));
                             options.add(OPTION_COPY);
                             icons.add(R.drawable.msg_copy);
+
+                            if(getUserConfig().isHideToolbar) {
+                                if(isContextClear) {
+                                    items.add(LocaleController.getString("ContextClear",
+                                            R.string.ContextClear));
+                                    options.add(context_clear);
+                                    icons.add(R.drawable.msg_clear);
+                                } else {
+                                    items.add(LocaleController.getString("UndoContextClear",
+                                            R.string.UndoContextClear));
+                                    options.add(undo_context_clear);
+                                    icons.add(R.drawable.chats_undo);
+                                }
+                            }
+
                         }
                         if (!isThreadChat() && chatMode != MODE_SCHEDULED && currentChat != null && (currentChat.has_link || message.hasReplies()) && currentChat.megagroup && message.canViewThread()) {
                             if (message.hasReplies()) {
@@ -25286,7 +25292,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         ArrayList<Animator> animators = new ArrayList<>();
         for (int a = 0; a < actionModeViews.size(); a++) {
             View view = actionModeViews.get(a);
-            view.setPivotY(ActionBar.getCurrentActionBarHeight() / 2);
+            view.setPivotY(actionBar.getActionBarHeight() / 2);
             AndroidUtilities.clearDrawableAnimation(view);
             animators.add(ObjectAnimator.ofFloat(view, View.SCALE_Y, 0.1f, 1.0f));
         }
@@ -25821,6 +25827,14 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
                 //显示复制成功提示
                 undoView.showWithAction(0, UndoView.ACTION_MESSAGE_COPIED, null);
+                break;
+            }
+            case context_clear: {
+                clearContext();
+                break;
+            }
+            case undo_context_clear: {
+                unClearContext();
                 break;
             }
             case OPTION_SHARE_CHAT: {
@@ -26433,6 +26447,29 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         selectedObjectGroup = null;
         selectedObjectToEditCaption = null;
         closeMenu(!preserveDim);
+    }
+
+    private void clearContext() {
+        if (messages != null && messages.size() > 0 && (messages.get(0).type != 10)) {
+            getMessagesController().clearContext(dialog_id);
+        }
+    }
+
+    private void unClearContext() {
+        if (messages != null && messages.size() > 0) {
+            MessageObject messageObject = messages.get(0);
+
+            if (messageObject.type == 10 && messageObject.messageOwner.action
+                    instanceof TLRPC.TL_messageActionClearContext) {
+                ArrayList<Integer> arr = new ArrayList<>();
+                arr.add(messageObject.messageOwner.id);
+                //cacheOnly为true则不向服务器发送删除数据
+                getMessagesController()
+                        .deleteMessages(arr, null, null, dialog_id,
+                                false, false,
+                                true, 0, null);
+            }
+        }
     }
 
     @Override

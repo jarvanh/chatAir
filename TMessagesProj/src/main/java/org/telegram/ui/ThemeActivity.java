@@ -699,7 +699,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                 // 副标题内容切换
                 switchSubtitleContentRow = rowCount++;
                 // 隐藏标题栏
-//                switchHideToolbarRow = rowCount++;
+                switchHideToolbarRow = rowCount++;
             }
 
             settings2Row = rowCount++;
