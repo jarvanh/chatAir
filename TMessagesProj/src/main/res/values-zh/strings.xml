@@ -1334,6 +1334,7 @@
     <string name="BlockUsers">屏蔽用户</string>
     <string name="BlockUserMessage">您要屏蔽 %1$s 在 ChatAir 上给您发送的消息与拨打的电话吗？</string>
     <string name="BlockUsersMessage">您要屏蔽 %1$s 在 ChatAir 上给您发送的消息与拨打的电话吗？</string>
+    <string name="MessageCopied">消息已复制到剪贴板</string>
     <string name="UserBlocked">用户已屏蔽</string>
     <string name="UserUnblocked">用户已取消屏蔽</string>
     <string name="EditContact">编辑联系人</string>

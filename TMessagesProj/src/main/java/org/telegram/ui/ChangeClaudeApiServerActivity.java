@@ -25,6 +25,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
@@ -286,14 +287,14 @@ public class ChangeClaudeApiServerActivity extends BaseFragment {
             }
 
             @Override
-            public void onError(AnthropicHttpException error, Throwable Throwable) {
+            public void onError(AnthropicHttpException error, Throwable throwable) {
                 AndroidUtilities.runOnUIThread(() -> {
                     String errorTx;
                     isReq = false;
                     if (error != null) {
                         errorTx = error.getMessage();
                     } else {
-                        errorTx = Throwable.getMessage();
+                        errorTx = SendMessagesHelper.formatError(throwable);
                     }
 
                     AlertsCreator.processError(errorTx, ChangeClaudeApiServerActivity.this);

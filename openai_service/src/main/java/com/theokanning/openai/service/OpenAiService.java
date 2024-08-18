@@ -97,6 +97,8 @@ public class OpenAiService {
     private LLMType llmTypeUrl = LLMType.unKnow;
     private LLMType llmTypeToken = LLMType.unKnow;
 
+    public static ErrorCallback errorCallback;
+
     /**
      * Creates a new OpenAiService that wraps OpenAiApi
      *
@@ -784,8 +786,13 @@ public class OpenAiService {
                                 String errorBody = e.response().errorBody().string();
 
                                 OpenAiError error = mapper.readValue(errorBody, OpenAiError.class);
-                                resultCallBack.onError(new OpenAiHttpException(error, e, e.code()),
-                                        throwable);
+                                if (error != null && error.error != null){
+                                    resultCallBack.onError(new OpenAiHttpException(error, e, e.code()),
+                                            throwable);
+                                } else {
+                                    resultCallBack.onError(null, throwable);
+                                }
+
                             }
                         } catch (IOException ex) {
                             // couldn't parse OpenAI error
@@ -1300,10 +1307,10 @@ public class OpenAiService {
     }
 
     public void clean() {
-        clean(true);
+        clean(true, false);
     }
 
-    public void clean(boolean isExecutor) {
+    public void clean(boolean isExecutor, boolean noCancelCallback) {
         clearRequest();
         if (streamCallBack != null){
             streamCallBack.onLoading(false);
@@ -1317,7 +1324,8 @@ public class OpenAiService {
         if (streamGCallBack != null){
             streamGCallBack.onCompletion();
         }
-        compositeDisposable.clear();
+
+        if(!noCancelCallback) compositeDisposable.clear();
         if (isExecutor) shutdownExecutor();
     }
 
@@ -1372,7 +1380,7 @@ public class OpenAiService {
         loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
 
         return new OkHttpClient.Builder()
-                .addInterceptor(new AuthenticationInterceptor(token, url, llmType))
+                .addInterceptor(new AuthenticationInterceptor(token, url, llmType, errorCallback))
 //                .addInterceptor(loggingInterceptor)
                 .connectionPool(new ConnectionPool(5, 1, TimeUnit.SECONDS))
                 .readTimeout(second * 1000, TimeUnit.MILLISECONDS)
@@ -1388,5 +1396,9 @@ public class OpenAiService {
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .callbackExecutor(executor)
                 .build();
+    }
+
+    public interface ErrorCallback {
+        void onError(Throwable t);
     }
 }

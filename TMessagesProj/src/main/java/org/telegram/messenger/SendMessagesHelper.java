@@ -12,6 +12,7 @@ import android.annotation.SuppressLint;
 import android.content.ClipDescription;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.content.res.AssetFileDescriptor;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -44,6 +45,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.flyun.base.BaseMessage;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import com.theokanning.openai.GoogleHttpException;
 import com.theokanning.openai.OpenAiHttpException;
 import com.theokanning.openai.completion.chat.ChatCompletionChoice;
@@ -882,6 +884,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     apiServer = UserConfig.getInstance(currentAccount).apiServer;
                     llmType = LLMType.openAi;
                 }
+                OpenAiService.errorCallback = t -> FirebaseCrashlytics.getInstance().recordException(t);
                 openAiService = new OpenAiService(token, 60, apiServer, llmType);
             }
         });
@@ -1351,9 +1354,13 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             }
         } else if (id == NotificationCenter.cancelRequest) {
 
+            boolean isShowStopStream = false;
+            if(args.length > 0) {
+                isShowStopStream = (boolean) args[0];
+            }
             if (openAiService != null && isRequesting) {
 //                isRequesting = false;
-                openAiService.clean(false);
+                openAiService.clean(false, isShowStopStream);
             }
         }
     }
@@ -6087,7 +6094,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                             if (error != null) {
                                 errorTx = error.getMessage();
                             } else {
-                                errorTx = throwable.getMessage();
+                                errorTx = formatError(throwable);
                             }
 
                             if (!TextUtils.isEmpty(errorTx)) {
@@ -6199,7 +6206,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                             } else {
 
 //                        Log.e("test","err:" + throwable);
-                                errorTx = throwable.getMessage();
+                                errorTx = formatError(throwable);
                             }
 
                             if (!TextUtils.isEmpty(errorTx)) {
@@ -7111,7 +7118,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         errorTx = getGeminiError(error.getMessage());
                     } else {
                         // 增加Gemini 一问一答的错误提示
-                        errorTx = getGeminiError(throwable.getMessage());
+                        errorTx = getGeminiError(formatError(throwable));
                     }
 
                     if (!TextUtils.isEmpty(errorTx)) {
@@ -7224,7 +7231,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                         + "\n" + "message:" + getGeminiError(error.getMessage());
                             } else {
                                 // 增加Gemini 一问一答的错误提示
-                                errorTx = getGeminiError(throwable.getMessage());
+                                errorTx = getGeminiError(formatError(throwable));
                             }
 
                             if (!TextUtils.isEmpty(errorTx)) {
@@ -7410,7 +7417,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     if (error != null) {
                         errorTx = error.getMessage();
                     } else {
-                        errorTx = throwable.getMessage();
+                        errorTx = formatError(throwable);
                     }
 
                     if (!TextUtils.isEmpty(errorTx)) {
@@ -7504,7 +7511,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                         + "\n" + "status:" + error.status
                                         + "\n" + "message:" + getGeminiError(error.getMessage());
                             } else {
-                                errorTx = throwable.getMessage();
+                                errorTx = formatError(throwable);
                             }
 
                             if (!TextUtils.isEmpty(errorTx)) {
@@ -10341,5 +10348,25 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         AndroidUtilities.runOnUIThread(() -> {
             getNotificationCenter().postNotificationName(NotificationCenter.updateSteam, this.isRequesting);
         });
+    }
+
+    public static String formatError(Throwable throwable) {
+        String response = "";
+        String version = "App version: ";
+
+        try {
+            PackageInfo pInfo = ApplicationLoader.applicationContext.getPackageManager()
+                    .getPackageInfo(ApplicationLoader.applicationContext.getPackageName(), 0);
+            version += String.format(Locale.US, "%s (%d)", pInfo.versionName,
+                    pInfo.versionCode);
+        } catch (Exception e) {
+        }
+
+        if(throwable instanceof retrofit2.HttpException
+                && ((retrofit2.HttpException) throwable).response() != null) {
+            response = ((retrofit2.HttpException) throwable).response().toString();
+        }
+
+        return throwable.getMessage() + "\n\n" + response + "\n\n" + version;
     }
 }

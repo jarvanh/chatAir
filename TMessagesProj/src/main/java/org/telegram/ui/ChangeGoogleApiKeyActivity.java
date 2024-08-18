@@ -27,6 +27,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -275,7 +276,7 @@ public class ChangeGoogleApiKeyActivity extends BaseFragment {
                             if (error != null) {
                                 errorTx = error.getMessage();
                             } else {
-                                errorTx = throwable.getMessage();
+                                errorTx = SendMessagesHelper.formatError(throwable);
                             }
 
                             AlertsCreator.processError(errorTx, ChangeGoogleApiKeyActivity.this);

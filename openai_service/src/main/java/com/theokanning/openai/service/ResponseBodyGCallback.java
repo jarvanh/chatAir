@@ -48,10 +48,17 @@ public class ResponseBodyGCallback implements Callback<ResponseBody> {
                 if (errorBody == null) {
                     throw e;
                 } else {
-                    GoogleError error = mapper.readValue(
-                            errorBody.string(),
-                            GoogleError.class
-                    );
+                    GoogleError error;
+                    try{
+                        error = mapper.readValue(
+                                errorBody.string(),
+                                GoogleError.class
+                        );
+                    } catch (Exception exception){
+                        // 无法正常解析，输出原格式
+                        throw e;
+                    }
+
                     throw new GoogleHttpException(error, e);
                 }
             }
@@ -61,9 +68,7 @@ public class ResponseBodyGCallback implements Callback<ResponseBody> {
             String line;
             SSE sse = null;
 
-            // todo 待测试
-            //while (!emitter.isCancelled() && (line = reader.readLine()) != null) {
-            while ((line = reader.readLine()) != null) {
+            while (!emitter.isCancelled() && (line = reader.readLine()) != null) {
                 if (line.startsWith("data:")) {
                     String data = line.substring(5).trim();
                     sse = new SSE(data);
@@ -92,6 +97,9 @@ public class ResponseBodyGCallback implements Callback<ResponseBody> {
                 if (resetException.errorCode.httpCode == ErrorCode.CANCEL.httpCode) {
                     isCancel = true;
                 }
+            } else if (t instanceof java.net.SocketException) {
+                // 暂时解决java.net.SocketException: Socket closed
+                isCancel = true;
             }
             if (isCancel) {
                 //并不会调用下游，只不过会取消从队列中继续取从而return。
@@ -122,7 +130,7 @@ public class ResponseBodyGCallback implements Callback<ResponseBody> {
                 isCancel = true;
             }
         }
-        if (isCancel) {
+        if (emitter.isCancelled() || isCancel) {
             emitter.onComplete();
         } else {
             emitter.onError(t);

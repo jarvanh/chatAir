@@ -2264,7 +2264,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
         }
         textFieldContainer.addView(cancelStreamButton, LayoutHelper.createFrame(48, 48, Gravity.BOTTOM | Gravity.RIGHT));
         cancelStreamButton.setOnClickListener(view -> {
-            NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.cancelRequest);
+            NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.cancelRequest, true);
         });
 
         if (isInScheduleMode()) {
@@ -9408,7 +9408,9 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
             isHideStopStream = !isShowStopStream;
             cancelStreamButton.setVisibility(isShowStopStream ? VISIBLE : GONE);
             sendButtonContainer.setVisibility(!isShowStopStream ? VISIBLE : GONE);
-            attachButton.setVisibility(!isShowStopStream ? VISIBLE : GONE);
+            if (!UserConfig.getInstance(currentAccount).isOldAgreement) {
+                attachButton.setVisibility(!isShowStopStream ? VISIBLE : GONE);
+            }
         } else if (id == NotificationCenter.updateModel) {
             updateAttachInterface();
         }

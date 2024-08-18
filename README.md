@@ -29,7 +29,7 @@ download and install the APK package from the [Releases section](https://github.
 - 🛠️ **Customizable**: Customizable prompts, model, temperature, history, and reply length limit settings, offering a personalized user experience.
 - 🌙 **Stylish**: Provides dark mode and customized themes to protect your eyes while enhancing user experience.
 - 🖼️ **Image recognition**: Supports image recognition function to quickly and accurately obtain image information.
-- 🌏 **Multilingual**: Supports multiple languages such as English, Simplified Chinese, Traditional Chinese, Italian, Spanish, German, Dutch, Arabic, Portuguese, Korean, Vietnamese.
+- 🌏 **Multilingual**: Supports multiple languages such as English, Simplified Chinese, Traditional Chinese, French, Italian, Spanish, German, Dutch, Arabic, Portuguese, Japanese, Korean, Vietnamese, Indonesian.
 
 
 ## Special Thanks

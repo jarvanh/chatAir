@@ -522,6 +522,8 @@ public class UserConfig extends BaseController {
         }
         aiModelList.put(15, new AiModelBean("GPT-4o mini", "gpt-4o-mini", true));
         aiModelList.put(13, new AiModelBean("GPT-4o", "gpt-4o", true));
+        aiModelList.put(17, new AiModelBean("GPT-4o-0806", "gpt-4o-2024-08-06", true));
+        aiModelList.put(18, new AiModelBean("GPT-4o-0513", "gpt-4o-2024-05-13", true));
         aiModelList.put(1, new AiModelBean("GPT-3.5", "gpt-3.5-turbo", true));
         aiModelList.put(2, new AiModelBean("GPT-3.5-0613", "gpt-3.5-turbo-0613", false));
         aiModelList.put(3, new AiModelBean("GPT-3.5-16k", "gpt-3.5-turbo-16k", true));

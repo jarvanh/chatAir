@@ -47,10 +47,17 @@ public class ResponseBodyCallback implements Callback<ResponseBody> {
                 if (errorBody == null) {
                     throw e;
                 } else {
-                    OpenAiError error = mapper.readValue(
-                            errorBody.string(),
-                            OpenAiError.class
-                    );
+                    OpenAiError error;
+                    try{
+                        error = mapper.readValue(
+                                errorBody.string(),
+                                OpenAiError.class
+                        );
+                    } catch (Exception exception){
+                        // 无法正常解析，输出原格式
+                        throw e;
+                    }
+
                     throw new OpenAiHttpException(error, e, e.code());
                 }
             }
@@ -93,6 +100,9 @@ public class ResponseBodyCallback implements Callback<ResponseBody> {
                 if (resetException.errorCode.httpCode == ErrorCode.CANCEL.httpCode) {
                     isCancel = true;
                 }
+            } else if (t instanceof java.net.SocketException) {
+                // 暂时解决java.net.SocketException: Socket closed
+                isCancel = true;
             }
             if (isCancel) {
                 //并不会调用下游，只不过会取消从队列中继续取从而return。
@@ -123,7 +133,7 @@ public class ResponseBodyCallback implements Callback<ResponseBody> {
                 isCancel = true;
             }
         }
-        if (isCancel) {
+        if (emitter.isCancelled() || isCancel) {
             emitter.onComplete();
         } else {
             emitter.onError(t);
