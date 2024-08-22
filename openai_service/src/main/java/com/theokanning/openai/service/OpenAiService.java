@@ -743,6 +743,8 @@ public class OpenAiService {
 
     }
 
+    private ResultCallBack resultCall;
+
     public <T> void createChatCompletion(Single<T> apiCall, BaseMessage baseMessage,
                                          ResultCallBack resultCallBack) {
 
@@ -755,15 +757,19 @@ public class OpenAiService {
                     @Override
                     public void onSubscribe(@NonNull Disposable disposable) {
 
+                        resultCall = resultCallBack;
                         compositeDisposable.add(disposable);
                         loading(resultCallBack);
                     }
 
                     @Override
                     public void onSuccess(@NonNull T t) {
-                        resultCallBack.onSuccess((ChatCompletionResult) t);
+                        if (t instanceof ChatCompletionResult) {
+                            resultCallBack.onSuccess((ChatCompletionResult) t);
+                        }
                         resultCallBack.onLoading(false);
                         compositeDisposable.clear();
+                        resultCall = null;
                     }
 
                     @Override
@@ -776,6 +782,7 @@ public class OpenAiService {
                             resultCallBack.onError(null, throwable);
                             resultCallBack.onLoading(false);
                             compositeDisposable.clear();
+                            resultCall = null;
                             return;
                         }
 
@@ -800,12 +807,15 @@ public class OpenAiService {
                         } finally {
                             resultCallBack.onLoading(false);
                             compositeDisposable.clear();
+                            resultCall = null;
                         }
 
                     }
                 }));
 
     }
+
+    private ResultGCallBack resultGCall;
 
     public <T> void createChatGCompletion(Single<T> apiCall, BaseMessage baseMessage,
                                           ResultGCallBack resultCallBack) {
@@ -819,15 +829,19 @@ public class OpenAiService {
                     @Override
                     public void onSubscribe(@NonNull Disposable disposable) {
 
+                        resultGCall = resultCallBack;
                         compositeDisposable.add(disposable);
                         loadingG(resultCallBack);
                     }
 
                     @Override
                     public void onSuccess(@NonNull T t) {
-                        resultCallBack.onSuccess((ChatGCompletionResponse) t);
+                        if(t instanceof ChatGCompletionResponse) {
+                            resultCallBack.onSuccess((ChatGCompletionResponse) t);
+                        }
                         resultCallBack.onLoading(false);
                         compositeDisposable.clear();
+                        resultGCall = null;
                     }
 
                     @Override
@@ -841,6 +855,7 @@ public class OpenAiService {
                             resultCallBack.onError(null, throwable);
                             resultCallBack.onLoading(false);
                             compositeDisposable.clear();
+                            resultGCall = null;
                             return;
                         }
 
@@ -860,6 +875,7 @@ public class OpenAiService {
                         } finally {
                             resultCallBack.onLoading(false);
                             compositeDisposable.clear();
+                            resultGCall = null;
                         }
 
                     }
@@ -867,6 +883,7 @@ public class OpenAiService {
 
     }
 
+    private ResultACallBack resultACall;
     public <T> void createChatACompletion(Single<T> apiCall, ResultACallBack resultCallBack) {
 
         compositeDisposable.clear();
@@ -878,15 +895,19 @@ public class OpenAiService {
                     @Override
                     public void onSubscribe(@NonNull Disposable disposable) {
 
+                        resultACall = resultCallBack;
                         compositeDisposable.add(disposable);
                         loadingA(resultCallBack);
                     }
 
                     @Override
                     public void onSuccess(@NonNull T t) {
-                        resultCallBack.onSuccess((ChatACompletionResponse) t);
+                        if (t instanceof ChatACompletionResponse) {
+                            resultCallBack.onSuccess((ChatACompletionResponse) t);
+                        }
                         resultCallBack.onLoading(false);
                         compositeDisposable.clear();
+                        resultACall = null;
                     }
 
                     @Override
@@ -900,6 +921,7 @@ public class OpenAiService {
                             resultCallBack.onError(null, throwable);
                             resultCallBack.onLoading(false);
                             compositeDisposable.clear();
+                            resultACall = null;
                             return;
                         }
 
@@ -919,6 +941,7 @@ public class OpenAiService {
                         } finally {
                             resultCallBack.onLoading(false);
                             compositeDisposable.clear();
+                            resultACall = null;
                         }
 
                     }
@@ -1314,15 +1337,28 @@ public class OpenAiService {
         clearRequest();
         if (streamCallBack != null){
             streamCallBack.onLoading(false);
-        }
-        if (streamCallBack != null){
             streamCallBack.onCompletion();
         }
         if (streamGCallBack != null){
             streamGCallBack.onLoading(false);
-        }
-        if (streamGCallBack != null){
             streamGCallBack.onCompletion();
+        }
+        if (streamACallBack != null){
+            streamACallBack.onLoading(false);
+            streamACallBack.onCompletion();
+        }
+
+        if (resultCall != null) {
+            resultCall.onLoading(false);
+            resultCall = null;
+        }
+        if (resultGCall != null) {
+            resultGCall.onLoading(false);
+            resultGCall = null;
+        }
+        if (resultACall != null) {
+            resultACall.onLoading(false);
+            resultACall = null;
         }
 
         if(!noCancelCallback) compositeDisposable.clear();

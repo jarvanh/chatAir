@@ -1354,13 +1354,13 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             }
         } else if (id == NotificationCenter.cancelRequest) {
 
-            boolean isShowStopStream = false;
+            boolean noCancelCallback = false;
             if(args.length > 0) {
-                isShowStopStream = (boolean) args[0];
+                noCancelCallback = (boolean) args[0];
             }
             if (openAiService != null && isRequesting) {
 //                isRequesting = false;
-                openAiService.clean(false, isShowStopStream);
+                openAiService.clean(false, noCancelCallback);
             }
         }
     }
@@ -6152,6 +6152,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         @Override
                         public void onSuccess(ChatCompletionResult result) {
 
+                            if (result.getChoices() == null) return;
                             for (ChatCompletionChoice completionChoice : result.getChoices()) {
 
                                 //推送服务暂停
@@ -7174,6 +7175,8 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         @Override
                         public void onSuccess(ChatGCompletionResponse result) {
 
+                            if(result.getCandidates() == null) return;
+
                             for (ChatGCandidate completionChoice : result.getCandidates()) {
 
                                 //任务服务暂停
@@ -7475,6 +7478,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         @Override
                         public void onSuccess(ChatACompletionResponse result) {
 
+                            if (result.getContent() == null) return;
                             for (ChatAMessage message : result.getContent()) {
 
                                 //任务服务暂停
