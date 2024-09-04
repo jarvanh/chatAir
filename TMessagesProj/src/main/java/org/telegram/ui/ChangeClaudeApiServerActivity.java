@@ -153,6 +153,19 @@ public class ChangeClaudeApiServerActivity extends BaseFragment {
         linearLayout.addView(firstNameField, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,
                 36, 24, 24, 24, 0));
 
+        TextView helpTextView = new TextView(context);
+        helpTextView.setFocusable(true);
+        helpTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
+        helpTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText8));
+        helpTextView.setGravity(LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT);
+        helpTextView.setText(AndroidUtilities.replaceTags(LocaleController
+                .getString("ChangeClaudeApiServerTips", R.string.ChangeClaudeApiServerTips)));
+        linearLayout.addView(helpTextView,LayoutHelper.createLinear(
+                LayoutHelper.WRAP_CONTENT,
+                LayoutHelper.WRAP_CONTENT,
+                LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT,
+                24, 10, 24, 0));
+
         TextView buttonTextView = new TextView(context);
 
         //因为服务器地址和密钥绑定，容易对用户造成混淆

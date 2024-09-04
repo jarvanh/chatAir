@@ -27,6 +27,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.browser.Browser;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -146,6 +147,47 @@ public class ChangeApiServerActivity extends BaseFragment {
             firstNameField.setSelection(apiServer.length());
         }
         linearLayout.addView(firstNameField, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 36, 24, 24, 24, 0));
+
+        TextView helpTextView = new TextView(context);
+        helpTextView.setFocusable(true);
+        helpTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
+        helpTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText8));
+        helpTextView.setGravity(LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT);
+        helpTextView.setText(AndroidUtilities.replaceTags(LocaleController
+                .getString("ChangeApiServerMoreInfo", R.string.ChangeApiServerTips)));
+        linearLayout.addView(helpTextView,LayoutHelper.createLinear(
+                        LayoutHelper.WRAP_CONTENT,
+                        LayoutHelper.WRAP_CONTENT,
+                        LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT,
+                        24, 10, 24, 0));
+
+
+        // 更多自定义链接教程
+        TextView moreInfoTextView = new TextView(context);
+
+        moreInfoTextView.setPadding(AndroidUtilities.dp(34), 0,
+                AndroidUtilities.dp(34), 0);
+        moreInfoTextView.setGravity(Gravity.CENTER);
+        moreInfoTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 12);
+        moreInfoTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+
+        moreInfoTextView.setText(LocaleController.getString("ChangeApiServerMoreInfo",
+                R.string.ChangeApiServerMoreInfo));
+
+        moreInfoTextView.setTextColor(Theme.getColor(Theme.key_featuredStickers_buttonText));
+        moreInfoTextView.setBackgroundDrawable(Theme.createSimpleSelectorRoundRectDrawable(
+                AndroidUtilities.dp(6), Theme.getColor(Theme.key_featuredStickers_addButton),
+                Theme.getColor(Theme.key_featuredStickers_addButtonPressed)));
+
+        moreInfoTextView.setOnClickListener(view -> {
+            Browser.openUrl(context,LocaleController.getString("ChangeApiServerMoreInfoUrl",
+                    R.string.ChangeApiServerMoreInfoUrl), true, false);
+            AndroidUtilities.logEvent("ChangeApiServerMoreInfo", "OpenAI");
+        });
+
+        linearLayout.addView(moreInfoTextView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,
+                48, Gravity.BOTTOM, 16, 15, 16, 16));
+
 
         TextView buttonTextView = new TextView(context);
 

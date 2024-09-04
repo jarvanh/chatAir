@@ -139,6 +139,7 @@ public class AuthenticationInterceptor implements Interceptor {
                         }
                     }
 
+                    // todo 无效代码
                     for (int i = 0; i <= oldHttpUrl.pathSegments().size() - 1; i++) {
                         String s = oldHttpUrl.pathSegments().get(i);
                         //如果有之前的后缀则忽略
