@@ -234,7 +234,9 @@ public class ChangeApiServerActivity extends BaseFragment {
         }
 
         String newFirst = firstNameField.getText().toString().replace("\n", "");
-        if (TextUtils.isEmpty(newFirst)) return;
+        if (TextUtils.isEmpty(newFirst)) {
+            newFirst = UserConfig.defaultApiServer;
+        };
 
         String formatUrl = formatUrl(newFirst);
         if (TextUtils.isEmpty(formatUrl)) {

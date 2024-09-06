@@ -1422,7 +1422,7 @@ public class OpenAiService {
 
             // 适配baseUrl
             String path = uri.getPath();
-            if (!"/".equals(path)) {
+            if (path == null || !path.endsWith("/")) {
                 path += "/";
             }
 

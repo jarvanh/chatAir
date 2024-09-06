@@ -241,6 +241,7 @@ public class ChangeApiKeyActivity extends BaseFragment {
 
         ChatCompletionRequest chatCompletionRequest  = ChatCompletionRequest.builder()
                 .model("gpt-3.5-turbo")
+                .model("gpt-4o-mini")
                 .temperature(0.1)
                 .maxTokens(256)
                 .build().setMessages(chatMessageList);
