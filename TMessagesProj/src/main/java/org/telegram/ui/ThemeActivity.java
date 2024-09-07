@@ -206,6 +206,8 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
 
     private int switchHideToolbarRow;
 
+    private int disableTabletModeRow;
+
     private int rowCount;
 
     private boolean updatingLocation;
@@ -564,6 +566,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
         autoHideKeyboardRow = -1;
         switchSubtitleContentRow = -1;
         switchHideToolbarRow = -1;
+        disableTabletModeRow = -1;
 
         appIconHeaderRow = -1;
         appIconSelectorRow = -1;
@@ -700,6 +703,10 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                 switchSubtitleContentRow = rowCount++;
                 // 隐藏标题栏
                 switchHideToolbarRow = rowCount++;
+                // 禁用平板模式
+                if (AndroidUtilities.isTabletInternal()) {
+                    disableTabletModeRow = rowCount++;
+                }
             }
 
             settings2Row = rowCount++;
@@ -1099,6 +1106,16 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                 if (view instanceof TextCheckCell) {
                     ((TextCheckCell) view).setChecked(!isStreamResponses);
                 }
+            } else if (position == disableTabletModeRow) {
+
+                SharedConfig.toggleForceDisableTabletMode();
+
+                Activity activity = AndroidUtilities.findActivity(context);
+                final PackageManager pm = activity.getPackageManager();
+                final Intent intent = pm.getLaunchIntentForPackage(activity.getPackageName());
+                activity.finishAffinity(); // Finishes all activities.
+                activity.startActivity(intent);    // Start the launch activity
+                System.exit(0);
             } else if (position == renderMarkdownRow) {
 
                 boolean isRenderMarkdown = getUserConfig().renderMarkdown;
@@ -2367,6 +2384,8 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                         textCheckCell.setTextAndCheck(LocaleController.getString("SendByEnter", R.string.SendByEnter), preferences.getBoolean("send_by_enter", BuildVars.IS_CHAT_AIR ? true : false), true);
                     } else if (position == streamResponsesRow) {
                         textCheckCell.setTextAndCheck(LocaleController.getString("StreamResponses", R.string.StreamResponses), getUserConfig().streamResponses, true);
+                    } else if (position == disableTabletModeRow) {
+                        textCheckCell.setTextAndCheck(LocaleController.getString("DisableTabletMode", R.string.DisableTabletMode), SharedConfig.forceDisableTabletMode, true);
                     } else if (position == renderMarkdownRow) {
                         textCheckCell.setTextAndCheck(LocaleController.getString("RenderMarkdown", R.string.RenderMarkdown), getUserConfig().renderMarkdown, true);
                     }  else if (position == raiseToSpeakRow) {
@@ -2503,7 +2522,8 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                     position == raiseToSpeakRow || position == pauseOnRecordRow || position == customTabsRow ||
                     position == directShareRow || position == chatBlurRow || position == streamResponsesRow ||
                     position == renderMarkdownRow || position == autoHideKeyboardRow ||
-                    position == switchSubtitleContentRow || position == switchHideToolbarRow) {
+                    position == switchSubtitleContentRow || position == switchHideToolbarRow ||
+                    position == disableTabletModeRow) {
                 return TYPE_TEXT_CHECK;
             } else if (position == textSizeRow) {
                 return TYPE_TEXT_SIZE;

@@ -3607,6 +3607,7 @@
     <string name="ChangeApiServerMoreInfoUrl">https://github.com/flyun/chatAir/wiki/Configuring-a-custom-server-tutorial</string>
     <string name="ChangeClaudeApiServerTips">Complies with the Calude protocol and can configure a custom Server.Enter the chat request interface URL and it will automatically match the custom Server.\n\nCalude can be configured with https://api.anthropic.com/v1/ messages or https://api.anthropic.com/</string>
     <string name="ChangeMoreModel">Show model list</string>
+    <string name="DisableTabletMode">Disable tablet mode</string>
     <!--chatAir End-->
 
     <!--Prompt Start-->
