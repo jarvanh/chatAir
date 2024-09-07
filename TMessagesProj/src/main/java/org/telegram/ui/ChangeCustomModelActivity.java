@@ -10,23 +10,34 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import com.theokanning.openai.OpenAiHttpException;
+import com.theokanning.openai.OpenAiResponse;
+import com.theokanning.openai.model.Model;
+import com.theokanning.openai.service.LLMType;
+import com.theokanning.openai.service.OpenAiService;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
+import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
+import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.LayoutHelper;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by flyun on 2023/9/17.
@@ -37,6 +48,8 @@ class ChangeCustomModelActivity extends BaseFragment {
     private View doneButton;
 
     private long userId = 0;
+
+    private OpenAiService openAiService;
     private String customModel;
 
     private Theme.ResourcesProvider resourcesProvider;
@@ -62,6 +75,11 @@ class ChangeCustomModelActivity extends BaseFragment {
         } else {
             customModel = UserConfig.getInstance(currentAccount).customModel;
         }
+
+        String token = UserConfig.getInstance(currentAccount).apiKey;
+        String apiServer = UserConfig.getInstance(currentAccount).apiServer;
+        openAiService = new OpenAiService(token, 5, apiServer, LLMType.openAi);
+
         return super.onFragmentCreate();
     }
 
@@ -122,7 +140,83 @@ class ChangeCustomModelActivity extends BaseFragment {
 
         linearLayout.addView(firstNameField, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 36, 24, 24, 24, 0));
 
+        // 配置自定义模型
+        TextView moreModelTextView = new TextView(context);
+
+        moreModelTextView.setPadding(AndroidUtilities.dp(34), 0,
+                AndroidUtilities.dp(34), 0);
+        moreModelTextView.setGravity(Gravity.CENTER);
+        moreModelTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 12);
+        moreModelTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+
+        moreModelTextView.setText(LocaleController.getString("ChangeMoreModel",
+                R.string.ChangeMoreModel));
+
+        moreModelTextView.setTextColor(Theme.getColor(Theme.key_featuredStickers_buttonText));
+        moreModelTextView.setBackgroundDrawable(Theme.createSimpleSelectorRoundRectDrawable(
+                AndroidUtilities.dp(6), Theme.getColor(Theme.key_featuredStickers_addButton),
+                Theme.getColor(Theme.key_featuredStickers_addButtonPressed)));
+
+        moreModelTextView.setOnClickListener(view -> {
+
+            openAiService.baseCompletion(openAiService.listModels,
+                    new OpenAiService.CompletionCallBack<OpenAiResponse<Model>>() {
+                        @Override
+                        public void onSuccess(Object o) {
+
+                            if (o instanceof OpenAiResponse) {
+                                showModel(((OpenAiResponse<Model>) o).data);
+                            }
+                        }
+
+                        @Override
+                        public void onError(OpenAiHttpException error, Throwable throwable) {
+
+                            AndroidUtilities.runOnUIThread(() -> {
+                                String info = SendMessagesHelper.formatError(throwable);
+                                getNotificationCenter().postNotificationName(NotificationCenter.showAlert,
+                                        AlertsCreator.TYPE_ALERT_ERROR, info);
+                            });
+
+                        }
+                    });
+
+
+        });
+
+        linearLayout.addView(moreModelTextView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT,
+                48, Gravity.BOTTOM, 16, 16, 16, 16));
+
         return fragmentView;
+    }
+
+    private void showModel(List<Model> modelList) {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+        builder.setTitle(LocaleController.getString("AiModelTitle", R.string.AiModelTitle));
+
+        if (modelList != null && !modelList.isEmpty()) {
+
+            CharSequence[] charSequences = new CharSequence[modelList.size()];
+
+            int i = 0;
+            for (Model model: modelList) {
+                charSequences[i] = model.id;
+                i++;
+            }
+
+            builder.setItems(charSequences, (dialog, which) -> {
+                String model = charSequences[which].toString();
+                if (!TextUtils.isEmpty(model)) {
+                    firstNameField.setText(model);
+                    firstNameField.setSelection(model.length());
+                }
+            });
+            builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+            showDialog(builder.create());
+        }
+
+
     }
 
     @Override
