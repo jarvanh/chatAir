@@ -524,6 +524,10 @@ public class UserConfig extends BaseController {
         aiModelList.put(13, new AiModelBean("GPT-4o", "gpt-4o", true));
         aiModelList.put(17, new AiModelBean("GPT-4o-0806", "gpt-4o-2024-08-06", true));
         aiModelList.put(18, new AiModelBean("GPT-4o-0513", "gpt-4o-2024-05-13", true));
+        aiModelList.put(19, new AiModelBean("o1 mini", "o1-mini", true));
+        aiModelList.put(20, new AiModelBean("o1 preview", "o1-preview", true));
+        aiModelList.put(21, new AiModelBean("o1 mini-2024-09-12", "o1-mini-2024-09-12", true));
+        aiModelList.put(22, new AiModelBean("o1 preview-2024-09-12", "o1-preview-2024-09-12", true));
         aiModelList.put(1, new AiModelBean("GPT-3.5", "gpt-3.5-turbo", true));
         aiModelList.put(2, new AiModelBean("GPT-3.5-0613", "gpt-3.5-turbo-0613", false));
         aiModelList.put(3, new AiModelBean("GPT-3.5-16k", "gpt-3.5-turbo-16k", true));
@@ -810,6 +814,15 @@ public class UserConfig extends BaseController {
 
     }
 
+    public static boolean isJudgeByModelO(int aiModel) {
+        if (aiModel == 19) return true;
+        if (aiModel == 20) return true;
+        if (aiModel == 21) return true;
+        if (aiModel == 22) return true;
+
+        return false;
+    }
+
     public boolean isJudgeByModelGeminiProVision(int aiModel) {
 
         if (aiModel == 802) return true;
@@ -829,6 +842,11 @@ public class UserConfig extends BaseController {
 
     public static boolean isSupportImageModel(int currentAccount, long userId) {
 
+        int aiModel = getUserAiModel(currentAccount, userId);
+        return isMultiCompletionRequest(currentAccount, userId) && !isJudgeByModelO(aiModel);
+    }
+
+    public static boolean isMultiCompletionRequest(int currentAccount, long userId) {
 
         int aiModel = getUserAiModel(currentAccount, userId);
 

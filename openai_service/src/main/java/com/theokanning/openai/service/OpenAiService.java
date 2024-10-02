@@ -1494,11 +1494,11 @@ public class OpenAiService {
                 // 匹配到特定格式，拆分后缀
                 tempPrefixUrl = path.substring(0, path.length() - pathEnd.length());
 
-                tempUrl = new URI(uri.getScheme(), uri.getAuthority(), tempPrefixUrl,
-                        null).toString();
+                tempUrl = new URI(uri.getScheme(),null, uri.getHost(), uri.getPort(), tempPrefixUrl,
+                        null,null).toString();
             } else {
-                tempUrl = new URI(uri.getScheme(), uri.getAuthority(), "/v1/",
-                        null).toString();
+                tempUrl = new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), path + "v1/",
+                        null,null).toString();
                 tempPrefixUrl = fixPrefixUrl;
             }
         } catch (URISyntaxException e) {

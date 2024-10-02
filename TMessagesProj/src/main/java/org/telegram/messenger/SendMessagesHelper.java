@@ -5942,16 +5942,11 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 // todo 旧协议兼容
                 // 发送请求格式切换，多模态请求，以及旧模态请求（只能发送文本）
 //                if (isMultiCompletionRequest(aiModelReal, isOpenAIVision)) {
-                if (UserConfig.isSupportImageModel(currentAccount, user.id)) {
+                if (UserConfig.isMultiCompletionRequest(currentAccount, user.id)) {
                     List<ChatMultiMessage> chatMessageList = getChatMultiCompletionRequest(prompt, msgObj);
-//                    if (true) return;
 
                     chatCompletionRequest = ChatCompletionRequest.builder()
                             .model(aiModelReal)
-                            .temperature(temperature != -100 ? temperature : null)
-                            // gpt-4-vision-preview如果不配置maxTokens，则会按照最短的maxTokens配置。
-                            //  导致输出文字过短，而图片模型无法进行多轮会话导致无法发送继续，输出更多内容。
-                            .maxTokens(tokenLimit != -100 ? tokenLimit : 4096)
                             .build().setMessages(chatMessageList);
 
                 } else {
@@ -5959,16 +5954,20 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
                     chatCompletionRequest = ChatCompletionRequest.builder()
                             .model(aiModelReal)
-                            .temperature(temperature != -100 ? temperature : null)
-                            .maxTokens(tokenLimit != -100 ? tokenLimit : null)
                             .build().setMessages(chatMessageList);
+                }
+
+                // o1不支持temperature以及tokenLimit，直接忽略配置
+                if (!UserConfig.isJudgeByModelO(aiModel)) {
+                    chatCompletionRequest.setTemperature(temperature != -100 ? temperature : null);
+                    chatCompletionRequest.setMaxTokens(tokenLimit != -100 ? tokenLimit : null);
                 }
 
                 BaseMessage baseMessage = new BaseMessage();
                 baseMessage.setDialog_id(newMsgObj.dialog_id);
                 KeepAliveJob.finishJob();
 
-                if (getUserConfig().streamResponses) {
+                if (getUserConfig().streamResponses && !UserConfig.isJudgeByModelO(aiModel)) {
 
                     streamMessages.clear();
 
