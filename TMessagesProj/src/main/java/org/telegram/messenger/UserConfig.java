@@ -579,11 +579,14 @@ public class UserConfig extends BaseController {
     public void initGoogle() {
         if (aiModelList == null) return;
         aiModelList.put(803, new AiModelBean("Gemini Pro 1.5", "gemini-1.5-pro-latest", true));
+        aiModelList.put(811, new AiModelBean("Gemini Pro 1.5 002", "gemini-1.5-pro-002", true));
         aiModelList.put(804, new AiModelBean("Gemini 1.5 Flash", "gemini-1.5-flash-latest", true));
+        aiModelList.put(812, new AiModelBean("Gemini 1.5 Flash 002", "gemini-1.5-flash-002", true));
         aiModelList.put(801, new AiModelBean("Gemini Pro 1.0", "gemini-pro", true));
         aiModelList.put(807, new AiModelBean("Gemini Pro 1.5 exp-0827", "gemini-1.5-pro-exp-0827", true));
         aiModelList.put(808, new AiModelBean("Gemini Pro 1.5 exp-0801", "gemini-1.5-pro-exp-0801", true));
         aiModelList.put(809, new AiModelBean("Gemini 1.5 Flash exp-0827", "gemini-1.5-flash-exp-0827", true));
+        aiModelList.put(813, new AiModelBean("Gemini 1.5 Flash 8b exp-0924", "gemini-1.5-flash-8b-exp-0924", true));
         aiModelList.put(810, new AiModelBean("Gemini 1.5 Flash 8b exp-0827", "gemini-1.5-flash-8b-exp-0827", true));
         aiModelList.put(802, new AiModelBean("Gemini Pro false", "gemini-pro-vision",
                 "Gemini Pro Vision (Picture model)", false));
@@ -622,7 +625,9 @@ public class UserConfig extends BaseController {
                 || model.equals("gemini-1.5-pro-exp-0827")
                 || model.equals("gemini-1.5-pro-exp-0801")
                 || model.equals("gemini-1.5-flash-exp-0827")
-                || model.equals("gemini-1.5-flash-8b-exp-0827")
+                || model.equals("gemini-1.5-pro-002")
+                || model.equals("gemini-1.5-flash-002")
+                || model.equals("gemini-1.5-flash-8b-exp-0924")
         )) {
             return "v1beta";
         }
@@ -797,6 +802,9 @@ public class UserConfig extends BaseController {
         if (aiModel == 808) return true;
         if (aiModel == 809) return true;
         if (aiModel == 810) return true;
+        if (aiModel == 811) return true;
+        if (aiModel == 812) return true;
+        if (aiModel == 813) return true;
 
         return false;
     }
@@ -873,6 +881,9 @@ public class UserConfig extends BaseController {
                 || aiModel == 808
                 || aiModel == 809
                 || aiModel == 810
+                || aiModel == 811
+                || aiModel == 812
+                || aiModel == 813
         ) return true;
 
         // Claude

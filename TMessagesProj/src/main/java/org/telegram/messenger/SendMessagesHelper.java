@@ -6987,7 +6987,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         return;
                     }
 
-                    if (!ChatGFinishReason.STOP.value().equals(chatGCandidate.getFinishReason())) {
+                    String finishReason = chatGCandidate.getFinishReason();
+
+                    if (finishReason != null && !ChatGFinishReason.STOP.value().equals(finishReason)) {
 
                         AndroidUtilities.runOnUIThread(() -> {
 
