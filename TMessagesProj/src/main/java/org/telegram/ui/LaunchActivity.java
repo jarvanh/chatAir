@@ -134,7 +134,6 @@ import org.telegram.ui.Components.AppIconBulletinLayout;
 import org.telegram.ui.Components.AttachBotIntroTopView;
 import org.telegram.ui.Components.AudioPlayerAlert;
 import org.telegram.ui.Components.BatteryDrawable;
-import org.telegram.ui.Components.BlockingUpdateView;
 import org.telegram.ui.Components.BotWebViewSheet;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
@@ -165,7 +164,6 @@ import org.telegram.ui.Components.StickersAlert;
 import org.telegram.ui.Components.TermsOfServiceView;
 import org.telegram.ui.Components.ThemeEditorView;
 import org.telegram.ui.Components.UndoView;
-import org.telegram.ui.Components.UpdateAppAlertDialog;
 import org.telegram.ui.Components.voip.VoIPHelper;
 import org.webrtc.voiceengine.WebRtcAudioTrack;
 
@@ -250,7 +248,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     private PasscodeView passcodeView;
     private List<PasscodeView> overlayPasscodeViews = new ArrayList<>();
     private TermsOfServiceView termsOfServiceView;
-    private BlockingUpdateView blockingUpdateView;
+//    private BlockingUpdateView blockingUpdateView;
     private AlertDialog visibleDialog;
     private AlertDialog proxyErrorDialog;
     private RecyclerListView sideMenu;//左划侧边栏内容
@@ -1522,22 +1520,22 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         }
     }
 
-    private void showUpdateActivity(int account, TLRPC.TL_help_appUpdate update, boolean check) {
-        if (blockingUpdateView == null) {
-            blockingUpdateView = new BlockingUpdateView(LaunchActivity.this) {
-                @Override
-                public void setVisibility(int visibility) {
-                    super.setVisibility(visibility);
-                    if (visibility == View.GONE) {
-                        drawerLayoutContainer.setAllowOpenDrawer(true, false);
-                    }
-                }
-            };
-            drawerLayoutContainer.addView(blockingUpdateView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
-        }
-        blockingUpdateView.show(account, update, check);
-        drawerLayoutContainer.setAllowOpenDrawer(false, false);
-    }
+//    private void showUpdateActivity(int account, TLRPC.TL_help_appUpdate update, boolean check) {
+//        if (blockingUpdateView == null) {
+//            blockingUpdateView = new BlockingUpdateView(LaunchActivity.this) {
+//                @Override
+//                public void setVisibility(int visibility) {
+//                    super.setVisibility(visibility);
+//                    if (visibility == View.GONE) {
+//                        drawerLayoutContainer.setAllowOpenDrawer(true, false);
+//                    }
+//                }
+//            };
+//            drawerLayoutContainer.addView(blockingUpdateView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+//        }
+//        blockingUpdateView.show(account, update, check);
+//        drawerLayoutContainer.setAllowOpenDrawer(false, false);
+//    }
 
     private void showTosActivity(int account, TLRPC.TL_help_termsOfService tos) {
         if (termsOfServiceView == null) {
@@ -4961,49 +4959,49 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         }
     }
 
-    public void checkAppUpdate(boolean force) {
-        if (!force && BuildVars.DEBUG_VERSION || !force && !BuildVars.CHECK_UPDATES) {
-            return;
-        }
-        if (!force && Math.abs(System.currentTimeMillis() - SharedConfig.lastUpdateCheckTime) < MessagesController.getInstance(0).updateCheckDelay * 1000) {
-            return;
-        }
-        TLRPC.TL_help_getAppUpdate req = new TLRPC.TL_help_getAppUpdate();
-        try {
-            req.source = ApplicationLoader.applicationContext.getPackageManager().getInstallerPackageName(ApplicationLoader.applicationContext.getPackageName());
-        } catch (Exception ignore) {
-
-        }
-        if (req.source == null) {
-            req.source = "";
-        }
-        final int accountNum = currentAccount;
-        ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
-            SharedConfig.lastUpdateCheckTime = System.currentTimeMillis();
-            SharedConfig.saveConfig();
-            if (response instanceof TLRPC.TL_help_appUpdate) {
-                final TLRPC.TL_help_appUpdate res = (TLRPC.TL_help_appUpdate) response;
-                AndroidUtilities.runOnUIThread(() -> {
-                    if (SharedConfig.pendingAppUpdate != null && SharedConfig.pendingAppUpdate.version.equals(res.version)) {
-                        return;
-                    }
-                    if (SharedConfig.setNewAppVersionAvailable(res)) {
-                        if (res.can_not_skip) {
-                            showUpdateActivity(accountNum, res, false);
-                        } else {
-                            drawerLayoutAdapter.notifyDataSetChanged();
-                            try {
-                                (new UpdateAppAlertDialog(LaunchActivity.this, res, accountNum)).show();
-                            } catch (Exception e) {
-                                FileLog.e(e);
-                            }
-                        }
-                        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.appUpdateAvailable);
-                    }
-                });
-            }
-        });
-    }
+//    public void checkAppUpdate(boolean force) {
+//        if (!force && BuildVars.DEBUG_VERSION || !force && !BuildVars.CHECK_UPDATES) {
+//            return;
+//        }
+//        if (!force && Math.abs(System.currentTimeMillis() - SharedConfig.lastUpdateCheckTime) < MessagesController.getInstance(0).updateCheckDelay * 1000) {
+//            return;
+//        }
+//        TLRPC.TL_help_getAppUpdate req = new TLRPC.TL_help_getAppUpdate();
+//        try {
+//            req.source = ApplicationLoader.applicationContext.getPackageManager().getInstallerPackageName(ApplicationLoader.applicationContext.getPackageName());
+//        } catch (Exception ignore) {
+//
+//        }
+//        if (req.source == null) {
+//            req.source = "";
+//        }
+//        final int accountNum = currentAccount;
+//        ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
+//            SharedConfig.lastUpdateCheckTime = System.currentTimeMillis();
+//            SharedConfig.saveConfig();
+//            if (response instanceof TLRPC.TL_help_appUpdate) {
+//                final TLRPC.TL_help_appUpdate res = (TLRPC.TL_help_appUpdate) response;
+//                AndroidUtilities.runOnUIThread(() -> {
+//                    if (SharedConfig.pendingAppUpdate != null && SharedConfig.pendingAppUpdate.version.equals(res.version)) {
+//                        return;
+//                    }
+//                    if (SharedConfig.setNewAppVersionAvailable(res)) {
+//                        if (res.can_not_skip) {
+//                            showUpdateActivity(accountNum, res, false);
+//                        } else {
+//                            drawerLayoutAdapter.notifyDataSetChanged();
+//                            try {
+//                                (new UpdateAppAlertDialog(LaunchActivity.this, res, accountNum)).show();
+//                            } catch (Exception e) {
+//                                FileLog.e(e);
+//                            }
+//                        }
+//                        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.appUpdateAvailable);
+//                    }
+//                });
+//            }
+//        });
+//    }
 
     public AlertDialog showAlertDialog(AlertDialog.Builder builder) {
         try {
@@ -5684,9 +5682,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         if (UserConfig.getInstance(UserConfig.selectedAccount).unacceptedTermsOfService != null) {
             showTosActivity(UserConfig.selectedAccount, UserConfig.getInstance(UserConfig.selectedAccount).unacceptedTermsOfService);
         } else if (SharedConfig.pendingAppUpdate != null && SharedConfig.pendingAppUpdate.can_not_skip) {
-            showUpdateActivity(UserConfig.selectedAccount, SharedConfig.pendingAppUpdate, true);
+//            showUpdateActivity(UserConfig.selectedAccount, SharedConfig.pendingAppUpdate, true);
         }
-        checkAppUpdate(false);
+//        checkAppUpdate(false);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             ApplicationLoader.canDrawOverlays = Settings.canDrawOverlays(this);
