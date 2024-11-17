@@ -59,6 +59,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.DialogObject;
@@ -2058,7 +2059,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     }
                     openDocumentsLayout(true);
                 } else if (num == 5) {
-                    if (Build.VERSION.SDK_INT >= 23 && plainTextEnabled) {
+                    if (!BuildVars.IS_CHAT_AIR && Build.VERSION.SDK_INT >= 23 && plainTextEnabled) {
                         if (getContext().checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
                             AndroidUtilities.findActivity(getContext()).requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, BasePermissionsActivity.REQUEST_CODE_ATTACH_CONTACT);
                             return;
@@ -2984,6 +2985,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     }
 
     public void onRequestPermissionsResultFragment(int requestCode, String[] permissions, int[] grantResults) {
+        if (BuildVars.IS_CHAT_AIR) return;
         if (requestCode == BasePermissionsActivity.REQUEST_CODE_ATTACH_CONTACT && grantResults != null && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             openContactsLayout();
         } else if (requestCode == 30 && locationLayout != null && currentAttachLayout == locationLayout && isShowing()) {
@@ -2992,6 +2994,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     }
 
     private void openContactsLayout() {
+        if (BuildVars.IS_CHAT_AIR) return;
         if (!plainTextEnabled) {
             restrictedLayout = new ChatAttachRestrictedLayout(5, this, getContext(), resourcesProvider);
             showLayout(restrictedLayout);

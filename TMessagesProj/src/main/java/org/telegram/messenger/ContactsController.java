@@ -473,6 +473,7 @@ public class ContactsController extends BaseController {
     }
 
     public void deleteAllContacts(final Runnable runnable) {
+        if (BuildVars.IS_CHAT_AIR) return;
         resetImportedContacts();
         TLRPC.TL_contacts_deleteContacts req = new TLRPC.TL_contacts_deleteContacts();
         for (int a = 0, size = contacts.size(); a < size; a++) {
@@ -548,6 +549,7 @@ public class ContactsController extends BaseController {
     }
 
     private boolean checkContactsInternal() {
+        if (BuildVars.IS_CHAT_AIR) return false;
         boolean reload = false;
         try {
             if (!hasContactsPermission()) {
@@ -576,6 +578,7 @@ public class ContactsController extends BaseController {
     }
 
     public void readContacts() {
+        if (BuildVars.IS_CHAT_AIR) return;
         synchronized (loadContactsSync) {
             if (loadingContacts) {
                 return;
@@ -609,6 +612,7 @@ public class ContactsController extends BaseController {
     }
 
     public HashMap<String, Contact> readContactsFromPhoneBook() {
+        if (BuildVars.IS_CHAT_AIR) return new HashMap<>();
         if (!getUserConfig().syncContacts) {
             if (BuildVars.LOGS_ENABLED) {
                 FileLog.d("contacts sync disabled");
@@ -916,6 +920,7 @@ public class ContactsController extends BaseController {
     }
 
     protected void migratePhoneBookToV7(final SparseArray<Contact> contactHashMap) {
+        if (BuildVars.IS_CHAT_AIR) return;
         Utilities.globalQueue.postRunnable(() -> {
             if (migratingContacts) {
                 return;
@@ -950,6 +955,7 @@ public class ContactsController extends BaseController {
     }
 
     protected void performSyncPhoneBook(final HashMap<String, Contact> contactHashMap, final boolean request, final boolean first, final boolean schedule, final boolean force, final boolean checkCount, final boolean canceled) {
+        if (BuildVars.IS_CHAT_AIR) return;
         if (!first && !contactsBookLoaded) {
             return;
         }
@@ -1456,6 +1462,7 @@ public class ContactsController extends BaseController {
     }
 
     public void loadContacts(boolean fromCache, final long hash) {
+        if (BuildVars.IS_CHAT_AIR) return;
         synchronized (loadContactsSync) {
             loadingContacts = true;
         }
@@ -1503,6 +1510,7 @@ public class ContactsController extends BaseController {
     }
 
     public void processLoadedContacts(final ArrayList<TLRPC.TL_contact> contactsArr, final ArrayList<TLRPC.User> usersArr, final int from) {
+        if (BuildVars.IS_CHAT_AIR) return;
         //from: 0 - from server, 1 - from db, 2 - from imported contacts
         AndroidUtilities.runOnUIThread(() -> {
             getMessagesController().putUsers(usersArr, from == 1);
@@ -1736,6 +1744,7 @@ public class ContactsController extends BaseController {
     }
 
     private void mergePhonebookAndTelegramContacts(final HashMap<String, ArrayList<Object>> phoneBookSectionsDictFinal, final ArrayList<String> phoneBookSectionsArrayFinal, final HashMap<String, Contact> phoneBookByShortPhonesFinal) {
+        if (BuildVars.IS_CHAT_AIR) return;
         final ArrayList<TLRPC.TL_contact> contactsCopy = new ArrayList<>(contacts);
         Utilities.globalQueue.postRunnable(() -> {
             for (int a = 0, size = contactsCopy.size(); a < size; a++) {
@@ -1815,6 +1824,7 @@ public class ContactsController extends BaseController {
     }
 
     private void updateUnregisteredContacts() {
+        if (BuildVars.IS_CHAT_AIR) return;
         final HashMap<String, TLRPC.TL_contact> contactsPhonesShort = new HashMap<>();
 
         for (int a = 0, size = contacts.size(); a < size; a++) {
@@ -1861,6 +1871,7 @@ public class ContactsController extends BaseController {
     }
 
     private void buildContactsSectionsArrays(boolean sort) {
+        if (BuildVars.IS_CHAT_AIR) return;
         final Collator collator = getLocaleCollator();
         if (sort) {
             Collections.sort(contacts, (tl_contact, tl_contact2) -> {
@@ -1920,6 +1931,7 @@ public class ContactsController extends BaseController {
     }
 
     private boolean hasContactsPermission() {
+        if (BuildVars.IS_CHAT_AIR) return false;
         if (Build.VERSION.SDK_INT >= 23) {
             return ApplicationLoader.applicationContext.checkSelfPermission(android.Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED;
         }
@@ -1945,6 +1957,7 @@ public class ContactsController extends BaseController {
     }
 
     private void performWriteContactsToPhoneBookInternal(ArrayList<TLRPC.TL_contact> contactsArray) {
+        if (BuildVars.IS_CHAT_AIR) return;
         Cursor cursor = null;
         try {
             Account account = systemAccount;
@@ -1989,6 +2002,7 @@ public class ContactsController extends BaseController {
     }
 
     private void applyContactsUpdates(ArrayList<Long> ids, ConcurrentHashMap<Long, TLRPC.User> userDict, ArrayList<TLRPC.TL_contact> newC, ArrayList<Long> contactsTD) {
+        if (BuildVars.IS_CHAT_AIR) return;
         if (newC == null || contactsTD == null) {
             newC = new ArrayList<>();
             contactsTD = new ArrayList<>();
@@ -2110,6 +2124,7 @@ public class ContactsController extends BaseController {
     }
 
     public void processContactsUpdates(ArrayList<Long> ids, ConcurrentHashMap<Long, TLRPC.User> userDict) {
+        if (BuildVars.IS_CHAT_AIR) return;
         final ArrayList<TLRPC.TL_contact> newContacts = new ArrayList<>();
         final ArrayList<Long> contactsToDelete = new ArrayList<>();
         for (Long uid : ids) {
@@ -2150,6 +2165,7 @@ public class ContactsController extends BaseController {
     }
 
     public long addContactToPhoneBook(TLRPC.User user, boolean check) {
+        if (BuildVars.IS_CHAT_AIR) return -1;
         if (systemAccount == null || user == null) {
             return -1;
         }
@@ -2237,6 +2253,7 @@ public class ContactsController extends BaseController {
     }
 
     private void deleteContactFromPhoneBook(long uid) {
+        if (BuildVars.IS_CHAT_AIR) return;
         if (!hasContactsPermission()) {
             return;
         }
@@ -2269,6 +2286,7 @@ public class ContactsController extends BaseController {
     }
 
     public void addContact(TLRPC.User user, boolean exception) {
+        if (BuildVars.IS_CHAT_AIR) return;
         if (user == null) {
             return;
         }
@@ -2341,6 +2359,7 @@ public class ContactsController extends BaseController {
     }
 
     public void deleteContact(final ArrayList<TLRPC.User> users, boolean showBulletin) {
+        if (BuildVars.IS_CHAT_AIR) return;
         if (users == null || users.isEmpty()) {
             return;
         }
@@ -2407,6 +2426,7 @@ public class ContactsController extends BaseController {
     }
 
     private void reloadContactsStatuses() {
+        if (BuildVars.IS_CHAT_AIR) return;
         saveContactsLoadTime();
         getMessagesController().clearFullUsers();
         SharedPreferences preferences = MessagesController.getMainSettings(currentAccount);
@@ -2451,6 +2471,7 @@ public class ContactsController extends BaseController {
     }
 
     public void loadPrivacySettings() {
+        if (BuildVars.IS_CHAT_AIR) return;
         if (loadingDeleteInfo == 0) {
             loadingDeleteInfo = 1;
             TLRPC.TL_account_getAccountTTL req = new TLRPC.TL_account_getAccountTTL();
@@ -2647,6 +2668,7 @@ public class ContactsController extends BaseController {
     }
 
     public void createOrUpdateConnectionServiceContact(long id, String firstName, String lastName) {
+        if (BuildVars.IS_CHAT_AIR) return;
         if (!hasContactsPermission()) {
             return;
         }
@@ -2739,6 +2761,7 @@ public class ContactsController extends BaseController {
     }
 
     public void deleteConnectionServiceContact() {
+        if (BuildVars.IS_CHAT_AIR) return;
         if (!hasContactsPermission())
             return;
         try {

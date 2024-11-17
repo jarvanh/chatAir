@@ -793,7 +793,7 @@ public class ContactsActivity extends BaseFragment implements NotificationCenter
         if (listViewAdapter != null) {
             listViewAdapter.notifyDataSetChanged();
         }
-        if (checkPermission && Build.VERSION.SDK_INT >= 23) {
+        if (!BuildVars.IS_CHAT_AIR && checkPermission && Build.VERSION.SDK_INT >= 23) {
             Activity activity = getParentActivity();
             if (activity != null) {
                 checkPermission = false;
@@ -846,6 +846,7 @@ public class ContactsActivity extends BaseFragment implements NotificationCenter
 
     @TargetApi(Build.VERSION_CODES.M)
     private void askForPermissons(boolean alert) {
+        if (BuildVars.IS_CHAT_AIR) return;
         Activity activity = getParentActivity();
         if (activity == null || !UserConfig.getInstance(currentAccount).syncContacts || activity.checkSelfPermission(Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
             return;
@@ -876,6 +877,7 @@ public class ContactsActivity extends BaseFragment implements NotificationCenter
 
     @Override
     public void onRequestPermissionsResultFragment(int requestCode, String[] permissions, int[] grantResults) {
+        if (BuildVars.IS_CHAT_AIR) return;
         if (requestCode == 1) {
             for (int a = 0; a < permissions.length; a++) {
                 if (grantResults.length <= a) {
