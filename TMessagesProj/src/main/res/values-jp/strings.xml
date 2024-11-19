@@ -5,7 +5,7 @@
     <string name="LanguageName">日本語</string>
     <string name="English">英語</string>
     <string name="LanguageNameInEnglish">Japanese</string>
-    <string name="LanguageCode">jp</string>
+    <string name="LanguageCode">ja</string>
     <string name="ContinueOnThisLanguage">日本語で続ける</string>
     <!--signin view-->
     <string name="YourPhone">お使いの電話</string>
