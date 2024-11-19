@@ -258,7 +258,7 @@ public class LocaleController {
         addRules(new String[]{"mt"}, new PluralRules_Maltese());
         addRules(new String[]{"zh","zh-tw","zh-hk","zh-sg"}, new PluralRules_One());
         addRules(new String[]{"vi"}, new PluralRules_One());
-        addRules(new String[]{"jp"}, new PluralRules_One());
+        addRules(new String[]{"ja"}, new PluralRules_One());
         addRules(new String[]{"in"}, new PluralRules_One());
         addRules(new String[]{"ga", "se", "sma", "smi", "smj", "smn", "sms"}, new PluralRules_Two());
         addRules(new String[]{"ak", "am", "bh", "fil", "tl", "guw", "hi", "ln", "mg", "nso", "ti", "wa"}, new PluralRules_Zero());
@@ -369,7 +369,7 @@ public class LocaleController {
         localeInfo.name = "日本語";
         localeInfo.nameEnglish = "Japanese";
         localeInfo.nameChinese = "日语";
-        localeInfo.shortName = localeInfo.pluralLangCode = "jp";
+        localeInfo.shortName = localeInfo.pluralLangCode = "ja";
         localeInfo.pathToFile = null;
         localeInfo.builtIn = true;
         languages.add(localeInfo);

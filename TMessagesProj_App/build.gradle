@@ -36,6 +36,18 @@ android {
         disable 'BlockedPrivateApi'
     }
 
+    bundle {
+        language {
+            enableSplit = false
+        }
+        density {
+            enableSplit = true
+        }
+        abi {
+            enableSplit = true
+        }
+    }
+
     dexOptions {
         jumboMode = true
     }
