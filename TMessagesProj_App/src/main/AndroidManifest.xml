@@ -10,11 +10,16 @@
 <!--    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"  tools:node="remove"/>-->
     <uses-permission android:name="android.permission.READ_PHONE_NUMBERS"  tools:node="remove"/>
     <uses-permission android:name="android.permission.READ_PHONE_STATE"  tools:node="remove"/>
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" tools:node="remove" />
+<!--    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" tools:node="remove" />-->
+<!--    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" tools:node="remove" />-->
+<!--    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" tools:node="remove" />-->
+<!--    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" tools:node="remove" />-->
 
-    <application android:name="org.telegram.messenger.ApplicationLoaderImpl" tools:replace="name">
-        <service android:name="org.telegram.messenger.GoogleVoiceClientService" android:exported="true"/>
+    <application android:name="info.flyun.chatair.ApplicationLoaderImpl" tools:replace="name">
+        <service android:name="info.flyun.chatair.GoogleVoiceClientService" android:exported="true"/>
         <activity
-            android:name="org.telegram.messenger.GoogleVoiceClientActivity"
+            android:name="info.flyun.chatair.GoogleVoiceClientActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="com.google.android.voicesearch.SEND_MESSAGE_TO_CONTACTS" />

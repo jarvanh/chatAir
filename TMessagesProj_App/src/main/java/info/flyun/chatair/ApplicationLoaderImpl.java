@@ -1,5 +1,6 @@
-package org.telegram.messenger;
+package info.flyun.chatair;
 
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.regular.BuildConfig;
 
 public class ApplicationLoaderImpl extends ApplicationLoader {

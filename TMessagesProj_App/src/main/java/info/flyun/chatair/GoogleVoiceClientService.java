@@ -6,12 +6,14 @@
  * Copyright Nikolai Kudashov, 2013-2018.
  */
 
-package org.telegram.messenger;
+package info.flyun.chatair;
 
 import android.content.Intent;
 import android.os.Bundle;
 
 import com.google.android.search.verification.client.SearchActionVerificationClientService;
+
+import org.telegram.messenger.AndroidUtilities;
 
 public class GoogleVoiceClientService extends SearchActionVerificationClientService {
 

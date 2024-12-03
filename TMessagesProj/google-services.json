@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:25984797783:android:c49a53d9ab31179af2e712",
         "android_client_info": {
-          "package_name": "info.flyun.chatair"
+          "package_name": "org.telegram.messenger"
         }
       },
       "oauth_client": [
