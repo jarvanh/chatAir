@@ -6945,8 +6945,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             List<ChatGSafetySetting> safetySettings = new ArrayList<>();
 
             for(ChatGSafetyCategory category : ChatGSafetyCategory.values()) {
+                if (category == null) continue;
                 ChatGSafetySetting safetySetting = ChatGSafetySetting.builder()
-                        .category(category.value())
+                        .category(category.getValue())
                         .threshold(ChatGSafetyThreshold.BLOCK_NONE.value())
                         .build();
 
