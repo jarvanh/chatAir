@@ -580,6 +580,7 @@ public class UserConfig extends BaseController {
         if (aiModelList == null) return;
         aiModelList.put(803, new AiModelBean("Gemini Pro 1.5", "gemini-1.5-pro-latest", true));
         aiModelList.put(811, new AiModelBean("Gemini Pro 1.5 002", "gemini-1.5-pro-002", true));
+        aiModelList.put(814, new AiModelBean("Gemini 2.0 Flash exp", "gemini-2.0-flash-exp", true));
         aiModelList.put(804, new AiModelBean("Gemini 1.5 Flash", "gemini-1.5-flash-latest", true));
         aiModelList.put(812, new AiModelBean("Gemini 1.5 Flash 002", "gemini-1.5-flash-002", true));
         aiModelList.put(801, new AiModelBean("Gemini Pro 1.0", "gemini-pro", true));
@@ -628,6 +629,7 @@ public class UserConfig extends BaseController {
                 || model.equals("gemini-1.5-pro-002")
                 || model.equals("gemini-1.5-flash-002")
                 || model.equals("gemini-1.5-flash-8b-exp-0924")
+                || model.equals("gemini-2.0-flash-exp")
         )) {
             return "v1beta";
         }
@@ -805,6 +807,7 @@ public class UserConfig extends BaseController {
         if (aiModel == 811) return true;
         if (aiModel == 812) return true;
         if (aiModel == 813) return true;
+        if (aiModel == 814) return true;
 
         return false;
     }
@@ -884,6 +887,7 @@ public class UserConfig extends BaseController {
                 || aiModel == 811
                 || aiModel == 812
                 || aiModel == 813
+                || aiModel == 814
         ) return true;
 
         // Claude
